@@ -1,4 +1,5 @@
-import { CardSlot, CardSlots, conf, EventFn, NextFn, Point, RenderFn, State } from './state'
+import { CardSlot, CardSlots, conf, Dimensions, EventFn, NextFn, Point, RenderFn, State } from './state'
+import { pipe } from './utility'
 
 export class Game {
 
@@ -48,7 +49,7 @@ export function next(state:State):State {
     return data.map(processEvents)
         .map(containerSize)
         .map(cardSize)
-        .map(cardSlots)
+        .map(cardSlotsPositions)
         .current
 }
 
@@ -87,23 +88,24 @@ function cardSize(state:State, oldState:State):State {
     return {...state, cardSize: card}
 }
 
-function cardSlots(state:State, oldState:State):State {
+function cardSlotsPositions(state:State, oldState:State):State {
     if (state.cardSize === oldState.cardSize) return state
     const width = conf.cardMargin + state.cardSize.width
     const height = 2 * conf.cardMargin + state.cardSize.height
-    const hand = {...state.cardSize, x: state.container.x, y: state.container.y}
-    const wastePile = {...hand, x: hand.x + width}
-    const target1 = {...wastePile, x: wastePile.x + 2 * width}
-    const target2 = {...target1, x: target1.x + width}
-    const target3 = {...target2, x: target2.x + width}
-    const target4 = {...target3, x: target3.x + width}
-    const packing1 = {...hand, y: hand.y + height}
-    const packing2 = {...packing1, x: packing1.x + width}
-    const packing3 = {...packing2, x: packing2.x + width}
-    const packing4 = {...packing3, x: packing3.x + width}
-    const packing5 = {...packing4, x: packing4.x + width}
-    const packing6 = {...packing5, x: packing5.x + width}
-    const packing7 = {...packing6, x: packing6.x + width}
+
+    const hand      = updateSlot(state.cardSlots.hand, state.container)
+    const wastePile = updateSlot(state.cardSlots.wastePile, {...hand, x: hand.x + width})
+    const target1   = updateSlot(state.cardSlots.target1, {...wastePile, x: wastePile.x + 2 * width})
+    const target2   = updateSlot(state.cardSlots.target2, {...target1, x: target1.x + width})
+    const target3   = updateSlot(state.cardSlots.target3, {...target2, x: target2.x + width})
+    const target4   = updateSlot(state.cardSlots.target4, {...target3, x: target3.x + width})
+    const packing1  = updateSlot(state.cardSlots.packing1, {...hand, y: hand.y + height})
+    const packing2  = updateSlot(state.cardSlots.packing2, {...packing1, x: packing1.x + width})
+    const packing3  = updateSlot(state.cardSlots.packing3, {...packing2, x: packing2.x + width})
+    const packing4  = updateSlot(state.cardSlots.packing4, {...packing3, x: packing3.x + width})
+    const packing5  = updateSlot(state.cardSlots.packing5, {...packing4, x: packing4.x + width})
+    const packing6  = updateSlot(state.cardSlots.packing6, {...packing5, x: packing5.x + width})
+    const packing7  = updateSlot(state.cardSlots.packing7, {...packing6, x: packing6.x + width})
 
     const cardSlots:CardSlots = {
         hand, wastePile, target1, target2, target3, target4,
@@ -111,4 +113,23 @@ function cardSlots(state:State, oldState:State):State {
     }
 
     return {...state, cardSlots: cardSlots}
+
+    function updateSlot(slot:CardSlot, position:Point):CardSlot {
+        return pipe(slot)
+        .pipe(updateSize(state.cardSize))
+        .pipe(updatePosition(position))
+        .run()
+    }
+
+    function updateSize(val:Dimensions) {
+        return function<A extends Dimensions>(data:A):A {
+            return {...data, height: val.height, width: val.width}
+        }
+    }
+
+    function updatePosition(val:Point) {
+        return function<A extends Point>(data:A):A {
+            return {...data, x: val.x, y: val.y}
+        }
+    }
 }

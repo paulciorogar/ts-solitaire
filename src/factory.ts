@@ -207,7 +207,6 @@ export class Factory {
         ].join('')
         // element.style.background = 'repeating-linear-gradient(120deg, #0092b7 0,black 1px, black .25em, #0092b7 calc(.25em + 1px), #0092b7 .75em)'
         // element.style.border = '2px solid rgb(187, 0, 255)'
-
         const result = new Component(element, update)
         return result
 

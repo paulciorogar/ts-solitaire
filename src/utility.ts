@@ -20,7 +20,7 @@ export class Pipe<A> {
     constructor(private prev:()=>A) {}
 
     pipe<B>(fn:(data:A)=>B) {
-        return new Pipe(() => {
+        return new Pipe<B>(() => {
             return fn(this.prev())
         })
     }
@@ -28,7 +28,9 @@ export class Pipe<A> {
     run(): A { return this.prev() }
 }
 
-export function pipe<A>(fn:()=>A) {return new Pipe(fn)}
+export function pipe<A>(data:A):Pipe<A> {
+    return new Pipe(() => data)
+}
 
 export function px(val:number):string {return val + 'px'}
 
