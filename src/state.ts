@@ -9,6 +9,8 @@ export const conf = Object.freeze({
     aspectRation: {x: 16, y: 10},
 })
 
+export function NO_OP() {}
+
 export type NextFn = (state:State) => State
 export type RenderFn = (state:State, oldState:State) => void
 export type EventFn = (state:State) => State
@@ -54,13 +56,18 @@ export type State = {
 }
 
 export function newState():State {
+    const testCard:Card = {
+        number: 1,
+        orientation: 'down',
+        suit: '♠'
+    }
     return {
         eventQ: [],
         body: {width: 0, height: 0},
         container: {width: 0, height: 0, y: 0, x: 0},
         cardSize: {width: 0, height: 0},
         cardSlots: {
-            hand:       {width: 0, height: 0, y: 0, x: 0, cards: []},
+            hand:       {width: 0, height: 0, y: 0, x: 0, cards: [testCard]},
             wastePile:  {width: 0, height: 0, y: 0, x: 0, cards: []},
             target1:    {width: 0, height: 0, y: 0, x: 0, cards: []},
             target2:    {width: 0, height: 0, y: 0, x: 0, cards: []},

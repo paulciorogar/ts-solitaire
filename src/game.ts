@@ -1,4 +1,4 @@
-import { CardSlot, CardSlots, conf, Dimensions, EventFn, NextFn, Point, RenderFn, State } from './state'
+import { Card, CardSlot, CardSlots, conf, Dimensions, EventFn, NextFn, Point, RenderFn, State } from './state'
 import { pipe } from './utility'
 
 export class Game {
@@ -131,5 +131,30 @@ function cardSlotsPositions(state:State, oldState:State):State {
         return function<A extends Point>(data:A):A {
             return {...data, x: val.x, y: val.y}
         }
+    }
+}
+
+const update = <A>(data:A) => (val:Partial<A>):A => {
+    return {...data, ...val}
+}
+
+export function nextCard(state:State):State {
+    const handCards = [...state.cardSlots.hand.cards]
+    const topCard = handCards.pop()
+    if (topCard) {
+        const nextCard:Card = {...topCard, orientation:'up'}
+        const hand:CardSlot = {...state.cardSlots.hand, cards: handCards}
+        const wastePileCards = [...state.cardSlots.wastePile.cards, nextCard]
+        const wastePile:CardSlot = {...state.cardSlots.wastePile, cards: wastePileCards}
+        const cardSlots:CardSlots = {...state.cardSlots, hand, wastePile}
+        return {...state, cardSlots}
+    } else {
+        const handCards:Card[] = state.cardSlots.wastePile.cards
+            .map((card:Card):Card => ({...card, orientation:'down'}))
+            .reverse()
+        const hand:CardSlot = {...state.cardSlots.hand, cards: handCards}
+        const wastePile:CardSlot = {...state.cardSlots.wastePile, cards: []}
+        const cardSlots:CardSlots = {...state.cardSlots, hand, wastePile}
+        return {...state, cardSlots}
     }
 }

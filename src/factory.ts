@@ -1,5 +1,5 @@
 import { Component } from './component'
-import { Dimensions, EventFn, Point, State } from './state'
+import { Dimensions, EventFn, NO_OP, Point, State } from './state'
 import { px } from './utility'
 
 export class Factory {
@@ -38,15 +38,25 @@ export class Factory {
 
     hand():Component<'div'> {
         const element = this.cardSlotElement()
-        const result = new Component(element, update)
-        result.append(this.card())
-        return result
-
-        function update(state:State, oldState:State, component:Component<'div'>) {
+        let card:Component<any>|undefined = undefined
+        const update = (state:State, oldState:State, component:Component<'div'>) => {
             if (state.cardSlots.hand === oldState.cardSlots.hand) return
             updateDimensions(element, state.cardSlots.hand)
             updatePosition(element, state.cardSlots.hand)
+
+            if (state.cardSlots.hand.cards.length === 0 && card) {
+                component.remove(card)
+                card = undefined
+            }
+
+            if (state.cardSlots.hand.cards.length > 0 && card === undefined) {
+                card = this.faceDownCard()
+                component.append(card)
+            }
+
         }
+        const result = new Component(element, update)
+        return result
     }
 
     wastePile():Component<'div'> {
@@ -216,6 +226,24 @@ export class Factory {
             // updatePosition(element, data)
 
         }
+    }
+
+    faceDownCard() {
+        const element = this.document.createElement('div')
+        element.style.borderRadius = px(8)
+        element.style.height = '100%'
+        element.style.width = '100%'
+        element.style.boxSizing = 'border-box'
+        // element.style.background = '#3d3861'
+        element.style.background = [
+            'linear-gradient(217deg, rgba(255,0,0,.8), rgba(255,0,0,0) 70.71%),',
+            'linear-gradient(127deg, rgba(0,255,0,.8), rgba(0,255,0,0) 70.71%),',
+            'linear-gradient(336deg, rgba(0,0,255,.8), rgba(0,0,255,0) 70.71%)'
+        ].join('')
+        // element.style.background = 'repeating-linear-gradient(120deg, #0092b7 0,black 1px, black .25em, #0092b7 calc(.25em + 1px), #0092b7 .75em)'
+        // element.style.border = '2px solid rgb(187, 0, 255)'
+        const result = new Component(element, NO_OP)
+        return result
     }
 
     cardSlotElement():HTMLDivElement {
