@@ -34,3 +34,7 @@ export function pipe<A>(data:A):Pipe<A> {
 
 export function px(val:number):string {return val + 'px'}
 
+export function top<A>(list:A[]|ReadonlyArray<A>, number:number):A[] {
+    return list.slice(-1 * number)
+}
+

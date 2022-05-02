@@ -2,12 +2,16 @@
 export const conf = Object.freeze({
     backgroundColor: '#000000',
     cardSlotBackgroundColor: '#201d36',
+    blackSuitColor: '#4488df',
+    redSuitColor: '#df4444',
     cardRatio: {x: 63, y:88},
     cardMargin: 10,
     columns: 7,
     containerMargin: 40,
     aspectRation: {x: 16, y: 10},
 })
+
+const cardNumbers = [1,2,3,4,5,6,7,8,9,10,11,12,13] as const
 
 export function NO_OP() {}
 
@@ -23,16 +27,20 @@ export type Club = '\u2663'
 export type Heart = '\u2665'
 export type Diamond = '\u2666'
 export type Suit = Club|Spade|Heart|Diamond
-export type CardNumber = 1|2|3|4|5|6|7|8|9|10|11|12|13
+export type CardNumber = typeof cardNumbers[number]
 export type Card = {
     readonly orientation: Orientation
     readonly suit:Suit
     readonly number:CardNumber
-}
+} & Point
 export type CardStack = {cards: ReadonlyArray<Card>}
-
 export type CardSlot = Dimensions & Point & CardStack
-export type CardSlots = {
+
+export type State = {
+    readonly eventQ:ReadonlyArray<EventFn>
+    readonly body: Dimensions
+    readonly container: Dimensions & Point
+    readonly cardSize: Dimensions
     readonly hand:CardSlot
     readonly wastePile:CardSlot
     readonly target1:CardSlot
@@ -47,39 +55,52 @@ export type CardSlots = {
     readonly packing6:CardSlot
     readonly packing7:CardSlot
 }
-export type State = {
-    readonly eventQ:ReadonlyArray<EventFn>
-    readonly body: Dimensions
-    readonly container: Dimensions & Point
-    readonly cardSize: Dimensions
-    readonly cardSlots: CardSlots
-}
 
 export function newState():State {
+    const cardDeck = newCardDeck()
     const testCard:Card = {
         number: 1,
         orientation: 'down',
-        suit: '♠'
+        suit: '♠',
+        y: 0, x: 0
     }
     return {
         eventQ: [],
         body: {width: 0, height: 0},
-        container: {width: 0, height: 0, y: 0, x: 0},
+        container: {width: 0, height: 0, x: 0, y: 0},
         cardSize: {width: 0, height: 0},
-        cardSlots: {
-            hand:       {width: 0, height: 0, y: 0, x: 0, cards: [testCard]},
-            wastePile:  {width: 0, height: 0, y: 0, x: 0, cards: []},
-            target1:    {width: 0, height: 0, y: 0, x: 0, cards: []},
-            target2:    {width: 0, height: 0, y: 0, x: 0, cards: []},
-            target3:    {width: 0, height: 0, y: 0, x: 0, cards: []},
-            target4:    {width: 0, height: 0, y: 0, x: 0, cards: []},
-            packing1:   {width: 0, height: 0, y: 0, x: 0, cards: []},
-            packing2:   {width: 0, height: 0, y: 0, x: 0, cards: []},
-            packing3:   {width: 0, height: 0, y: 0, x: 0, cards: []},
-            packing4:   {width: 0, height: 0, y: 0, x: 0, cards: []},
-            packing5:   {width: 0, height: 0, y: 0, x: 0, cards: []},
-            packing6:   {width: 0, height: 0, y: 0, x: 0, cards: []},
-            packing7:   {width: 0, height: 0, y: 0, x: 0, cards: []},
-        }
+        hand:       {width: 0, height: 0, x: 0, y: 0, cards: [testCard]},
+        wastePile:  {width: 0, height: 0, x: 0, y: 0, cards: [cardDeck[0]]},
+        target1:    {width: 0, height: 0, x: 0, y: 0, cards: []},
+        target2:    {width: 0, height: 0, x: 0, y: 0, cards: []},
+        target3:    {width: 0, height: 0, x: 0, y: 0, cards: []},
+        target4:    {width: 0, height: 0, x: 0, y: 0, cards: []},
+        packing1:   {width: 0, height: 0, x: 0, y: 0, cards: []},
+        packing2:   {width: 0, height: 0, x: 0, y: 0, cards: []},
+        packing3:   {width: 0, height: 0, x: 0, y: 0, cards: []},
+        packing4:   {width: 0, height: 0, x: 0, y: 0, cards: []},
+        packing5:   {width: 0, height: 0, x: 0, y: 0, cards: []},
+        packing6:   {width: 0, height: 0, x: 0, y: 0, cards: []},
+        packing7:   {width: 0, height: 0, x: 0, y: 0, cards: []},
     }
 }
+
+export function newCardDeck():Card[] {
+    return [
+        ...generateSuite('♠'),
+        ...generateSuite('♣'),
+        ...generateSuite('♥'),
+        ...generateSuite('♦'),
+    ]
+
+    function generateSuite(suit:Suit):Card[] {
+        return cardNumbers.map(num => ({
+            number: num,
+            orientation: 'up',
+            suit: suit,
+            x: 0, y: 0
+        }))
+    }
+}
+
+

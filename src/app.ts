@@ -13,7 +13,7 @@ window.addEventListener('load', () => {
     const game = new Game(window, state, next, render)
     const newEvent = game.newEvent.bind(game)
     const factory = new Factory(document, newEvent)
-    const view:Component<any> = factory.mainContainer()
+    const view:Component<any> = factory.mainContainer(state)
 
     document.body.appendChild(view.element)
 
@@ -27,7 +27,7 @@ window.addEventListener('load', () => {
 function renderFn(view:Component<any>):RenderFn {
     return function render(state:State, oldState:State) {
         view.update(state, oldState)
-        view.forEachChild(child => child.update(state, oldState))
+        view.forEachChild(child => renderFn(child)(state, oldState))
     }
 }
 
@@ -38,6 +38,7 @@ function init(document:Document) {
     document.body.style.margin = '0'
     document.body.style.boxSizing = 'border-box'
     document.body.style.backgroundColor = conf.backgroundColor
+    document.body.style.fontFamily = 'Sans-serif'
 }
 
 function onResize(game:Game, document:Document):()=>void {
