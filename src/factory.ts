@@ -1,6 +1,7 @@
 import { Component } from './component'
-import { Card, conf, Dimensions, EventFn, NO_OP, Point, State, Suit, CardNumber } from './state';
+import { Card, conf, Dimensions, EventFn, NO_OP, Point, State, Suit, CardNumber } from './state'
 import { px, top } from './utility'
+import { nextCard } from './game'
 
 export class Factory {
 
@@ -38,6 +39,7 @@ export class Factory {
 
     hand():Component<'div'> {
         const element = this.cardSlotElement()
+        element.addEventListener('click', () => this.newEvent(nextCard))
         let card:Component<any>|undefined = undefined
         const update = (state:State, oldState:State, component:Component<'div'>) => {
             if (state.hand === oldState.hand) return
@@ -90,7 +92,7 @@ export class Factory {
                 component.append(bottomCard)
             }
             if (second && topCard === undefined) {
-                topCard = factory.card(state, bottomCardData)
+                topCard = factory.card(state, topCardData)
                 component.append(topCard)
             }
             if (second === undefined && topCard) {
@@ -106,6 +108,11 @@ export class Factory {
         function bottomCardData(state:State):Card {
             const [first,_] = top(state.wastePile.cards, 2)
             return first
+        }
+
+        function topCardData(state:State):Card {
+            const [_,second] = top(state.wastePile.cards, 2)
+            return second
         }
     }
 
@@ -260,11 +267,13 @@ export class Factory {
         element.style.background = '#414060'
         element.style.boxShadow = 'rgba(0, 0, 0, 0.16) 0px 1px 4px'
 
+        element.id = [cardNumber(data.number), data.suit].join('-')
         element.style.color = suitColor(data.suit)
         numberTop.textContent = cardNumber(data.number)
         numberBottom.textContent = cardNumber(data.number)
         suiteTop.textContent = data.suit
         suiteBottom.textContent = data.suit
+        suiteMiddle.textContent = data.suit
 
         numberTop.style.whiteSpace = 'pre'
 
@@ -275,7 +284,6 @@ export class Factory {
         suiteBottom.style.transform = 'rotate(180deg)'
         suiteBottom.style.display = 'inline-block'
 
-        suiteMiddle.textContent = data.suit
 
         topRow.style.display = 'flex'
 
@@ -299,30 +307,43 @@ export class Factory {
         bottomRow.appendChild(numberBottom)
         element.appendChild(bottomRow)
 
-        const component = new Component(element, update)
+        renderDimensions(state)
+        renderCardData(data)
 
+        const component = new Component(element, update)
         return component
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             const data = fetchData(state)
             const oldData = fetchData(oldState)
             if (state.cardSize !== oldState.cardSize) {
-                updateDimensions(element, state.cardSize)
-                element.style.borderRadius = px(Math.ceil(state.cardSize.height * 0.05)) // TODO move to state
-                numberTop.style.fontSize = px(Math.ceil(state.cardSize.height * 0.1))
-                numberBottom.style.fontSize = px(Math.ceil(state.cardSize.height * 0.1))
-                suiteTop.style.fontSize = px(Math.ceil(state.cardSize.height * 0.12))
-                suiteBottom.style.fontSize = px(Math.ceil(state.cardSize.height * 0.12))
-                suiteMiddle.style.fontSize = px(Math.ceil(state.cardSize.height * 0.40))
-                suiteMiddle.style.marginBottom = px(Math.ceil(state.cardSize.height * 0.15))
+                renderDimensions(state)
             }
             if (data === oldData) return
+            renderCardData(data)
+
+        }
+
+        function renderCardData(data:Card) {
             updatePosition(element, data)
+            element.id = [cardNumber(data.number), data.suit].join('-')
             element.style.color = suitColor(data.suit)
             numberTop.textContent = cardNumber(data.number)
             numberBottom.textContent = cardNumber(data.number)
             suiteTop.textContent = data.suit
             suiteBottom.textContent = data.suit
+            suiteMiddle.textContent = data.suit
+        }
+
+        function renderDimensions(state:State) {
+            updateDimensions(element, state.cardSize)
+            element.style.borderRadius = px(Math.ceil(state.cardSize.height * 0.05)) // TODO move to state
+            numberTop.style.fontSize = px(Math.ceil(state.cardSize.height * 0.1))
+            numberBottom.style.fontSize = px(Math.ceil(state.cardSize.height * 0.1))
+            suiteTop.style.fontSize = px(Math.ceil(state.cardSize.height * 0.12))
+            suiteBottom.style.fontSize = px(Math.ceil(state.cardSize.height * 0.12))
+            suiteMiddle.style.fontSize = px(Math.ceil(state.cardSize.height * 0.40))
+            suiteMiddle.style.marginBottom = px(Math.ceil(state.cardSize.height * 0.15))
         }
     }
 
@@ -369,8 +390,8 @@ function suitColor(suit:Suit):string {
     switch(suit) {
         case '♠': return conf.blackSuitColor
         case '♣': return conf.blackSuitColor
-        case '♥': return conf.blackSuitColor
-        case '♦': return conf.blackSuitColor
+        case '♥': return conf.redSuitColor
+        case '♦': return conf.redSuitColor
     }
 }
 

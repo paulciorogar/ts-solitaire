@@ -125,24 +125,26 @@ function cardSlotsPositions(state:State, oldState:State):State {
         }
     }
 
-    function updateSize(val:Dimensions) {
-        return function<A extends Dimensions>(data:A):A {
-            return {...data, height: val.height, width: val.width}
-        }
-    }
+}
 
-    function updatePosition(val:Point) {
-        return function<A extends Point>(data:A):A {
-            return {...data, x: val.x, y: val.y}
-        }
+function updateSize(val:Dimensions) {
+    return function<A extends Dimensions>(data:A):A {
+        return {...data, height: val.height, width: val.width}
+    }
+}
+
+function updatePosition(val:Point) {
+    return function<A extends Point>(data:A):A {
+        return {...data, x: val.x, y: val.y}
     }
 }
 
 export function nextCard(state:State):State {
     const handCards = [...state.hand.cards]
     const topCard = handCards.pop()
+    const updateWastePilePosition = updatePosition(state.wastePile)
     if (topCard) {
-        const nextCard:Card = {...topCard, orientation:'up'}
+        const nextCard:Card = updateWastePilePosition(topCard)
         const hand:CardSlot = {...state.hand, cards: handCards}
         const wastePileCards = [...state.wastePile.cards, nextCard]
         const wastePile:CardSlot = {...state.wastePile, cards: wastePileCards}
