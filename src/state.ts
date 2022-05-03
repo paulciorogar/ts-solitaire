@@ -18,6 +18,9 @@ export function NO_OP() {}
 export type NextFn = (state:State) => State
 export type RenderFn = (state:State, oldState:State) => void
 export type EventFn = (state:State) => State
+export type PickUpCardFn = (event:MouseEvent) => void
+export type MoveCardFn = (event:MouseEvent)=>void
+
 export type Dimensions = {readonly width:number, readonly height:number}
 export type Point = {readonly x:number, readonly y:number }
 
@@ -35,13 +38,20 @@ export type Card = {
 } & Point
 export type CardStack = {cards: ReadonlyArray<Card>}
 export type CardSlot = Dimensions & Point & CardStack
+export type Hand = {
+    startX:number,
+    startY:number,
+    card:Card,
+    backToSource:EventFn
+}
 
 export type State = {
+    readonly hand:Hand|undefined
     readonly eventQ:ReadonlyArray<EventFn>
     readonly body: Dimensions
     readonly container: Dimensions & Point
     readonly cardSize: Dimensions
-    readonly hand:CardSlot
+    readonly sourcePile:CardSlot
     readonly wastePile:CardSlot
     readonly target1:CardSlot
     readonly target2:CardSlot
@@ -58,18 +68,13 @@ export type State = {
 
 export function newState():State {
     const cardDeck = newCardDeck()
-    const testCard:Card = {
-        number: 1,
-        orientation: 'down',
-        suit: '♠',
-        y: 0, x: 0
-    }
     return {
+        hand: undefined,
         eventQ: [],
-        body: {width: 0, height: 0},
-        container: {width: 0, height: 0, x: 0, y: 0},
-        cardSize: {width: 0, height: 0},
-        hand:       {width: 0, height: 0, x: 0, y: 0, cards: [...cardDeck]},
+        body:       {width: 0, height: 0},
+        container:  {width: 0, height: 0, x: 0, y: 0},
+        cardSize:   {width: 0, height: 0},
+        sourcePile: {width: 0, height: 0, x: 0, y: 0, cards: [...cardDeck]},
         wastePile:  {width: 0, height: 0, x: 0, y: 0, cards: []},
         target1:    {width: 0, height: 0, x: 0, y: 0, cards: []},
         target2:    {width: 0, height: 0, x: 0, y: 0, cards: []},
@@ -102,5 +107,3 @@ export function newCardDeck():Card[] {
         }))
     }
 }
-
-

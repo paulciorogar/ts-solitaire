@@ -1,20 +1,25 @@
 import { Component } from './component'
-import { Card, conf, Dimensions, EventFn, NO_OP, Point, State, Suit, CardNumber } from './state'
-import { px, top } from './utility'
-import { nextCard } from './game'
+import { Card, conf, Dimensions, EventFn, NO_OP, Point, State, Suit, CardNumber, PickUpCardFn, CardSlot, CardStack, MoveCardFn } from './state';
+import { px, top, dom, throttle } from './utility';
+import { moveCard, nextCard, pickUpCardFromWastePile, setCard } from './game';
+import { newCard } from './cardComponent';
 
 export class Factory {
 
-    constructor(private document:Document, private newEvent:(fn:EventFn)=>void) {}
+    constructor(private document:Document, readonly newEvent:(fn:EventFn)=>void) {}
 
     mainContainer(state:State):Component<any> {
+        const factory = this
         const element = this.document.createElement('div')
+        let moveCardCallback:MoveCardFn|undefined
+
+        let hand:Component<'div'>|undefined = undefined
         element.style.position = 'fixed'
         element.style.width = '100%'
         element.style.height = '100%'
 
         const container = new Component(element, update)
-        container.append(this.hand())
+        container.append(this.sourcePile())
         container.append(this.wastePile(state))
         container.append(this.target1())
         container.append(this.target2())
@@ -31,27 +36,54 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.container !== oldState.container) {
-                updateDimensions(element, state.container)
-                updatePosition(element, state.container)
+                dom.updateDimensions(element, state.container)
+                dom.updatePosition(element, state.container)
+            }
+            if (state.hand !== oldState.hand) {
+                if (state.hand === undefined && hand) {
+                    component.remove(hand)
+                }
+                if (state.hand && hand === undefined) {
+                    hand = factory.hand(state.hand.card, state)
+                    component.append(hand)
+                }
+            }
+            if (state.hand !== oldState.hand) {
+                if (state.hand === undefined && moveCardCallback) {
+                    document.body.removeEventListener('mousemove',  moveCardCallback)
+                    moveCardCallback = undefined
+                }
+                if (state.hand && moveCardCallback === undefined) {
+                    moveCardCallback = factory.moveCard()
+                    document.body.addEventListener('mousemove', moveCardCallback)
+                }
             }
         }
     }
 
-    hand():Component<'div'> {
+    hand(card:Card, state:State) {
+        return this.card(card, state, NO_OP, this.moveCard(), fetchData)
+
+        function fetchData(state:State):Card|undefined {
+            return state.hand?.card
+        }
+    }
+
+    sourcePile():Component<'div'> {
         const element = this.cardSlotElement()
         element.addEventListener('click', () => this.newEvent(nextCard))
         let card:Component<any>|undefined = undefined
         const update = (state:State, oldState:State, component:Component<'div'>) => {
-            if (state.hand === oldState.hand) return
-            updateDimensions(element, state.hand)
-            updatePosition(element, state.hand)
+            if (state.sourcePile === oldState.sourcePile) return
+            dom.updateDimensions(element, state.sourcePile)
+            dom.updatePosition(element, state.sourcePile)
 
-            if (state.hand.cards.length === 0 && card) {
+            if (state.sourcePile.cards.length === 0 && card) {
                 component.remove(card)
                 card = undefined
             }
 
-            if (state.hand.cards.length > 0 && card === undefined) {
+            if (state.sourcePile.cards.length > 0 && card === undefined) {
                 card = this.faceDownCard()
                 component.append(card)
             }
@@ -76,8 +108,8 @@ export class Factory {
             if (state.wastePile === oldState.wastePile) return
 
             if (state.wastePile.height !== oldState.wastePile.height) {
-                updateDimensions(element, state.wastePile)
-                updatePosition(element, state.wastePile)
+                dom.updateDimensions(element, state.wastePile)
+                dom.updatePosition(element, state.wastePile)
             }
 
             if (state.wastePile.cards !== oldState.wastePile.cards) {
@@ -88,11 +120,11 @@ export class Factory {
         function renderCards(state:State) {
             const [first, second] = top(state.wastePile.cards, 2)
             if (first && bottomCard === undefined) {
-                bottomCard = factory.card(state, bottomCardData)
+                bottomCard = factory.card(first, state, pickUpCard, NO_OP, bottomCardData)
                 component.append(bottomCard)
             }
             if (second && topCard === undefined) {
-                topCard = factory.card(state, topCardData)
+                topCard = factory.card(second, state, pickUpCard, NO_OP, topCardData)
                 component.append(topCard)
             }
             if (second === undefined && topCard) {
@@ -105,14 +137,18 @@ export class Factory {
             }
         }
 
-        function bottomCardData(state:State):Card {
+        function bottomCardData(state:State):Card|undefined {
             const [first,_] = top(state.wastePile.cards, 2)
             return first
         }
 
-        function topCardData(state:State):Card {
+        function topCardData(state:State):Card|undefined {
             const [_,second] = top(state.wastePile.cards, 2)
             return second
+        }
+
+        function pickUpCard(event:MouseEvent) {
+            factory.newEvent(pickUpCardFromWastePile(event))
         }
     }
 
@@ -123,8 +159,8 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.target1 === oldState.target1) return
-            updateDimensions(element, state.target1)
-            updatePosition(element, state.target1)
+            dom.updateDimensions(element, state.target1)
+            dom.updatePosition(element, state.target1)
         }
     }
 
@@ -135,8 +171,8 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.target2 === oldState.target2) return
-            updateDimensions(element, state.target2)
-            updatePosition(element, state.target2)
+            dom.updateDimensions(element, state.target2)
+            dom.updatePosition(element, state.target2)
         }
     }
 
@@ -147,8 +183,8 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.target3 === oldState.target3) return
-            updateDimensions(element, state.target3)
-            updatePosition(element, state.target3)
+            dom.updateDimensions(element, state.target3)
+            dom.updatePosition(element, state.target3)
         }
     }
 
@@ -159,8 +195,8 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.target4 === oldState.target4) return
-            updateDimensions(element, state.target4)
-            updatePosition(element, state.target4)
+            dom.updateDimensions(element, state.target4)
+            dom.updatePosition(element, state.target4)
         }
     }
 
@@ -171,8 +207,8 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.packing1 === oldState.packing1) return
-            updateDimensions(element, state.packing1)
-            updatePosition(element, state.packing1)
+            dom.updateDimensions(element, state.packing1)
+            dom.updatePosition(element, state.packing1)
         }
     }
 
@@ -183,8 +219,8 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.packing2 === oldState.packing2) return
-            updateDimensions(element, state.packing2)
-            updatePosition(element, state.packing2)
+            dom.updateDimensions(element, state.packing2)
+            dom.updatePosition(element, state.packing2)
         }
     }
 
@@ -195,8 +231,8 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.packing3 === oldState.packing3) return
-            updateDimensions(element, state.packing3)
-            updatePosition(element, state.packing3)
+            dom.updateDimensions(element, state.packing3)
+            dom.updatePosition(element, state.packing3)
         }
     }
 
@@ -207,8 +243,8 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.packing4 === oldState.packing4) return
-            updateDimensions(element, state.packing4)
-            updatePosition(element, state.packing4)
+            dom.updateDimensions(element, state.packing4)
+            dom.updatePosition(element, state.packing4)
         }
     }
 
@@ -219,8 +255,8 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.packing5 === oldState.packing5) return
-            updateDimensions(element, state.packing5)
-            updatePosition(element, state.packing5)
+            dom.updateDimensions(element, state.packing5)
+            dom.updatePosition(element, state.packing5)
         }
     }
 
@@ -231,8 +267,8 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.packing6 === oldState.packing6) return
-            updateDimensions(element, state.packing6)
-            updatePosition(element, state.packing6)
+            dom.updateDimensions(element, state.packing6)
+            dom.updatePosition(element, state.packing6)
         }
     }
 
@@ -243,108 +279,23 @@ export class Factory {
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.packing7 === oldState.packing7) return
-            updateDimensions(element, state.packing7)
-            updatePosition(element, state.packing7)
+            dom.updateDimensions(element, state.packing7)
+            dom.updatePosition(element, state.packing7)
         }
     }
 
-    card(state:State, fetchData:(state:State)=>Card) {
-        const data = fetchData(state)
-        const element = this.document.createElement('div')
-        const topRow = this.document.createElement('div')
-        const middleRow = this.document.createElement('div')
-        const bottomRow = this.document.createElement('div')
-        const numberTop = this.document.createElement('span')
-        const suiteTop = this.document.createElement('span')
-        const suiteBottom = this.document.createElement('span')
-        const numberBottom = this.document.createElement('span')
-        const suiteMiddle = this.document.createElement('span')
+    card(card:Card, state:State, pickUpCard:PickUpCardFn, moveCard:MoveCardFn, fetchData:(state:State)=>Card|undefined) {
+        return newCard(card, this.document, state, pickUpCard, this.setCard(), fetchData)
+    }
 
-        element.style.position = 'fixed'
-        element.style.display = 'flex'
-        element.style.flexDirection = 'column'
-        element.style.boxSizing = 'border-box'
-        element.style.background = '#414060'
-        element.style.boxShadow = 'rgba(0, 0, 0, 0.16) 0px 1px 4px'
+    setCard() {
+        return () => this.newEvent(setCard)
+    }
 
-        element.id = [cardNumber(data.number), data.suit].join('-')
-        element.style.color = suitColor(data.suit)
-        numberTop.textContent = cardNumber(data.number)
-        numberBottom.textContent = cardNumber(data.number)
-        suiteTop.textContent = data.suit
-        suiteBottom.textContent = data.suit
-        suiteMiddle.textContent = data.suit
-
-        numberTop.style.whiteSpace = 'pre'
-
-        numberBottom.style.transform = 'rotate(180deg)'
-        numberBottom.style.display = 'inline-block'
-        numberBottom.style.whiteSpace = 'pre'
-
-        suiteBottom.style.transform = 'rotate(180deg)'
-        suiteBottom.style.display = 'inline-block'
-
-
-        topRow.style.display = 'flex'
-
-        middleRow.style.flex = '1'
-        middleRow.style.display = 'flex'
-        middleRow.style.alignItems = 'center'
-        middleRow.style.justifyContent = 'center'
-        middleRow.style.overflow = 'hidden'
-
-        bottomRow.style.display = 'flex'
-        bottomRow.style.justifyContent = 'end'
-
-        topRow.appendChild(numberTop)
-        topRow.appendChild(suiteTop)
-        element.appendChild(topRow)
-
-        middleRow.appendChild(suiteMiddle)
-        element.appendChild(middleRow)
-
-        bottomRow.appendChild(suiteBottom)
-        bottomRow.appendChild(numberBottom)
-        element.appendChild(bottomRow)
-
-        renderDimensions(state)
-        renderCardData(data)
-
-        const component = new Component(element, update)
-        return component
-
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            const data = fetchData(state)
-            const oldData = fetchData(oldState)
-            if (state.cardSize !== oldState.cardSize) {
-                renderDimensions(state)
-            }
-            if (data === oldData) return
-            renderCardData(data)
-
-        }
-
-        function renderCardData(data:Card) {
-            updatePosition(element, data)
-            element.id = [cardNumber(data.number), data.suit].join('-')
-            element.style.color = suitColor(data.suit)
-            numberTop.textContent = cardNumber(data.number)
-            numberBottom.textContent = cardNumber(data.number)
-            suiteTop.textContent = data.suit
-            suiteBottom.textContent = data.suit
-            suiteMiddle.textContent = data.suit
-        }
-
-        function renderDimensions(state:State) {
-            updateDimensions(element, state.cardSize)
-            element.style.borderRadius = px(Math.ceil(state.cardSize.height * 0.05)) // TODO move to state
-            numberTop.style.fontSize = px(Math.ceil(state.cardSize.height * 0.1))
-            numberBottom.style.fontSize = px(Math.ceil(state.cardSize.height * 0.1))
-            suiteTop.style.fontSize = px(Math.ceil(state.cardSize.height * 0.12))
-            suiteBottom.style.fontSize = px(Math.ceil(state.cardSize.height * 0.12))
-            suiteMiddle.style.fontSize = px(Math.ceil(state.cardSize.height * 0.40))
-            suiteMiddle.style.marginBottom = px(Math.ceil(state.cardSize.height * 0.15))
-        }
+    moveCard() {
+        return throttle((event:MouseEvent) => {
+            this.newEvent(moveCard(event))
+        }, 16)
     }
 
     faceDownCard() {
@@ -374,31 +325,4 @@ export class Factory {
         element.style.border = '2px solid #3d3861'
         return element
     }
-}
-
-function updateDimensions(element:HTMLElement, data:Dimensions):void {
-    element.style.width = px(data.width)
-    element.style.height = px(data.height)
-}
-
-function updatePosition(element:HTMLElement, data:Point) {
-    element.style.top = px(data.y)
-    element.style.left = px(data.x)
-}
-
-function suitColor(suit:Suit):string {
-    switch(suit) {
-        case '♠': return conf.blackSuitColor
-        case '♣': return conf.blackSuitColor
-        case '♥': return conf.redSuitColor
-        case '♦': return conf.redSuitColor
-    }
-}
-
-function cardNumber(number:CardNumber):string {
-    if (number === 1) return ' A'
-    if (number === 11) return ' J'
-    if (number === 12) return ' Q'
-    if (number === 13) return ' K'
-    return ' ' + number.toString()
 }

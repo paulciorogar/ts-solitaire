@@ -1,3 +1,4 @@
+import { Dimensions, Point } from './state';
 export function debounce<A>(fn:(data:A)=>void, time:number) {
     let timeoutId:number|undefined = undefined
     return function (data:A) {
@@ -38,3 +39,14 @@ export function top<A>(list:A[]|ReadonlyArray<A>, number:number):A[] {
     return list.slice(-1 * number)
 }
 
+export const dom = {
+    updateDimensions: function(element:HTMLElement, data:Dimensions):void {
+        element.style.width = px(data.width)
+        element.style.height = px(data.height)
+    },
+
+    updatePosition: function(element:HTMLElement, data:Point) {
+        element.style.top = px(data.y)
+        element.style.left = px(data.x)
+    }
+}

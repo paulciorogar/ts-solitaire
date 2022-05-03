@@ -1,4 +1,4 @@
-import { Card, CardSlot, conf, Dimensions, EventFn, NextFn, Point, RenderFn, State } from './state'
+import { Card, CardSlot, conf, Dimensions, EventFn, Hand, NextFn, Point, RenderFn, State, PickUpCardFn } from './state';
 import { pipe } from './utility'
 
 export class Game {
@@ -93,21 +93,21 @@ function cardSlotsPositions(state:State, oldState:State):State {
     const width = conf.cardMargin + state.cardSize.width
     const height = 2 * conf.cardMargin + state.cardSize.height
 
-    const hand      = updateSlot(state.hand, state.container)
-    const wastePile = updateSlot(state.wastePile, {...hand, x: hand.x + width})
-    const target1   = updateSlot(state.target1, {...wastePile, x: wastePile.x + 2 * width})
-    const target2   = updateSlot(state.target2, {...target1, x: target1.x + width})
-    const target3   = updateSlot(state.target3, {...target2, x: target2.x + width})
-    const target4   = updateSlot(state.target4, {...target3, x: target3.x + width})
-    const packing1  = updateSlot(state.packing1, {...hand, y: hand.y + height})
-    const packing2  = updateSlot(state.packing2, {...packing1, x: packing1.x + width})
-    const packing3  = updateSlot(state.packing3, {...packing2, x: packing2.x + width})
-    const packing4  = updateSlot(state.packing4, {...packing3, x: packing3.x + width})
-    const packing5  = updateSlot(state.packing5, {...packing4, x: packing4.x + width})
-    const packing6  = updateSlot(state.packing6, {...packing5, x: packing5.x + width})
-    const packing7  = updateSlot(state.packing7, {...packing6, x: packing6.x + width})
+    const sourcePile    = updateSlot(state.sourcePile, state.container)
+    const wastePile     = updateSlot(state.wastePile, {...sourcePile, x: sourcePile.x + width})
+    const target1       = updateSlot(state.target1, {...wastePile, x: wastePile.x + 2 * width})
+    const target2       = updateSlot(state.target2, {...target1, x: target1.x + width})
+    const target3       = updateSlot(state.target3, {...target2, x: target2.x + width})
+    const target4       = updateSlot(state.target4, {...target3, x: target3.x + width})
+    const packing1      = updateSlot(state.packing1, {...sourcePile, y: sourcePile.y + height})
+    const packing2      = updateSlot(state.packing2, {...packing1, x: packing1.x + width})
+    const packing3      = updateSlot(state.packing3, {...packing2, x: packing2.x + width})
+    const packing4      = updateSlot(state.packing4, {...packing3, x: packing3.x + width})
+    const packing5      = updateSlot(state.packing5, {...packing4, x: packing4.x + width})
+    const packing6      = updateSlot(state.packing6, {...packing5, x: packing5.x + width})
+    const packing7      = updateSlot(state.packing7, {...packing6, x: packing6.x + width})
 
-    return {...state, hand, wastePile, target1, target2, target3, target4,
+    return {...state, sourcePile, wastePile, target1, target2, target3, target4,
         packing1, packing2, packing3, packing4, packing5, packing6, packing7
     }
 
@@ -139,20 +139,66 @@ function updatePosition(val:Point) {
     }
 }
 
+export function pickUpCardFromWastePile(event:MouseEvent):EventFn {
+    return (state:State):State => {
+        const cards = [...state.wastePile.cards]
+        const card = cards.pop()
+        if (card === undefined) return state
+        const wastePile:CardSlot = {...state.wastePile, cards}
+        const hand:Hand = {
+            startX: event.screenX,
+            startY: event.screenY,
+            card,
+            backToSource: addCardToWastePile
+        }
+        return {...state, wastePile, hand}
+    }
+}
+
+export function setCard(state:State):State {
+    return state
+}
+
+export function moveCard(event:MouseEvent):EventFn {
+    return (state:State):State => {
+        if (state.hand === undefined) return state
+        const point:Point = {
+            x: state.hand.card.x + (event.screenX - state.hand.startX),
+            y: state.hand.card.y + (event.screenY - state.hand.startY),
+        }
+        const move = updatePosition(point)
+        const hand:Hand = {
+            ...state.hand,
+            card: move(state.hand.card),
+            startX: event.screenX,
+            startY: event.screenY
+        }
+        return {...state, hand}
+    }
+}
+
 export function nextCard(state:State):State {
-    const handCards = [...state.hand.cards]
+    const handCards = [...state.sourcePile.cards]
     const topCard = handCards.pop()
     const updateWastePilePosition = updatePosition(state.wastePile)
     if (topCard) {
         const nextCard:Card = updateWastePilePosition(topCard)
-        const hand:CardSlot = {...state.hand, cards: handCards}
+        const hand:CardSlot = {...state.sourcePile, cards: handCards}
         const wastePileCards = [...state.wastePile.cards, nextCard]
         const wastePile:CardSlot = {...state.wastePile, cards: wastePileCards}
-        return {...state, hand, wastePile}
+        return {...state, sourcePile: hand, wastePile}
     } else {
         const handCards:Card[] = [...state.wastePile.cards].reverse()
-        const hand:CardSlot = {...state.hand, cards: handCards}
+        const hand:CardSlot = {...state.sourcePile, cards: handCards}
         const wastePile:CardSlot = {...state.wastePile, cards: []}
-        return {...state, hand, wastePile}
+        return {...state, sourcePile: hand, wastePile}
     }
+}
+
+export function addCardToWastePile(state:State):State {
+    if (state.hand === undefined) return state
+    const updateCardPosition = updatePosition(state.wastePile)
+    const cards = [...state.wastePile.cards, updateCardPosition(state.hand.card)]
+    const wastePile:CardSlot = {...state.wastePile, cards}
+    return {...state, wastePile: wastePile, hand: undefined}
 }
