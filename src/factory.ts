@@ -1,8 +1,8 @@
+import { newCard } from './cardComponent'
 import { Component } from './component'
-import { Card, conf, Dimensions, EventFn, NO_OP, Point, State, Suit, CardNumber, PickUpCardFn, CardSlot, CardStack, MoveCardFn } from './state';
-import { px, top, dom, throttle } from './utility';
-import { moveCard, nextCard, pickUpCardFromWastePile, setCard } from './game';
-import { newCard } from './cardComponent';
+import { moveCard, nextCard, pickUpCardFromWastePile, setCard } from './game'
+import { Card, EventFn, NO_OP, PickUpCardFn, State } from './state'
+import { dom, px, throttle, top } from './utility'
 
 export class Factory {
 
@@ -11,9 +11,10 @@ export class Factory {
     mainContainer(state:State):Component<any> {
         const factory = this
         const element = this.document.createElement('div')
-        let moveCardCallback:MoveCardFn|undefined
+        const moveCardCallback = this.moveCard()
+        element.addEventListener('mouseup', this.setCard())
 
-        let hand:Component<'div'>|undefined = undefined
+        let handComponent:Component<any>|undefined = undefined
         element.style.position = 'fixed'
         element.style.width = '100%'
         element.style.height = '100%'
@@ -40,29 +41,22 @@ export class Factory {
                 dom.updatePosition(element, state.container)
             }
             if (state.hand !== oldState.hand) {
-                if (state.hand === undefined && hand) {
-                    component.remove(hand)
-                }
-                if (state.hand && hand === undefined) {
-                    hand = factory.hand(state.hand.card, state)
-                    component.append(hand)
-                }
-            }
-            if (state.hand !== oldState.hand) {
-                if (state.hand === undefined && moveCardCallback) {
+                if (state.hand === undefined && handComponent) {
                     document.body.removeEventListener('mousemove',  moveCardCallback)
-                    moveCardCallback = undefined
+                    component.remove(handComponent)
+                    handComponent = undefined
                 }
-                if (state.hand && moveCardCallback === undefined) {
-                    moveCardCallback = factory.moveCard()
+                if (state.hand && handComponent === undefined) {
+                    handComponent = factory.hand(state.hand.card, state)
                     document.body.addEventListener('mousemove', moveCardCallback)
+                    component.append(handComponent)
                 }
             }
         }
     }
 
     hand(card:Card, state:State) {
-        return this.card(card, state, NO_OP, this.moveCard(), fetchData)
+        return this.card(card, state, NO_OP, fetchData)
 
         function fetchData(state:State):Card|undefined {
             return state.hand?.card
@@ -120,11 +114,11 @@ export class Factory {
         function renderCards(state:State) {
             const [first, second] = top(state.wastePile.cards, 2)
             if (first && bottomCard === undefined) {
-                bottomCard = factory.card(first, state, pickUpCard, NO_OP, bottomCardData)
+                bottomCard = factory.card(first, state, pickUpCard, bottomCardData)
                 component.append(bottomCard)
             }
             if (second && topCard === undefined) {
-                topCard = factory.card(second, state, pickUpCard, NO_OP, topCardData)
+                topCard = factory.card(second, state, pickUpCard, topCardData)
                 component.append(topCard)
             }
             if (second === undefined && topCard) {
@@ -284,8 +278,8 @@ export class Factory {
         }
     }
 
-    card(card:Card, state:State, pickUpCard:PickUpCardFn, moveCard:MoveCardFn, fetchData:(state:State)=>Card|undefined) {
-        return newCard(card, this.document, state, pickUpCard, this.setCard(), fetchData)
+    card(card:Card, state:State, pickUpCard:PickUpCardFn, fetchData:(state:State)=>Card|undefined) {
+        return newCard(card, this.document, state, pickUpCard, fetchData)
     }
 
     setCard() {

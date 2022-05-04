@@ -42,7 +42,7 @@ export type Hand = {
     startX:number,
     startY:number,
     card:Card,
-    backToSource:EventFn
+    setCard:EventFn
 }
 
 export type State = {

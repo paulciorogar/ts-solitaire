@@ -7,7 +7,6 @@ export function newCard(
     document:Document,
     state:State,
     pickUpCard:PickUpCardFn,
-    setCard:()=>void,
     fetchData:(state:State)=>Card|undefined
 ) {
     const element = document.createElement('div')
@@ -25,6 +24,8 @@ export function newCard(
     element.style.flexDirection = 'column'
     element.style.boxSizing = 'border-box'
     element.style.background = '#414060'
+    element.style.cursor = 'grab'
+    element.style.userSelect = 'none'
     element.style.boxShadow = 'rgba(0, 0, 0, 0.16) 0px 1px 4px'
 
     numberTop.style.whiteSpace = 'pre'
@@ -63,18 +64,19 @@ export function newCard(
     renderCardData(data)
 
     element.addEventListener('mousedown', pickUpCard)
-    element.addEventListener('mouseup', setCard)
 
     const component = new Component(element, update)
     return component
 
     function update(state:State, oldState:State, component:Component<'div'>) {
-        const data = fetchData(state)
-        if (data === undefined) return
-        const oldData = fetchData(oldState)
         if (state.cardSize !== oldState.cardSize) {
             renderDimensions(state)
         }
+
+        const data = fetchData(state)
+        if (data === undefined) return
+
+        const oldData = fetchData(oldState)
         if (data === oldData) return
         renderCardData(data)
     }

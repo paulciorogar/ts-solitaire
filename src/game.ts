@@ -149,14 +149,15 @@ export function pickUpCardFromWastePile(event:MouseEvent):EventFn {
             startX: event.screenX,
             startY: event.screenY,
             card,
-            backToSource: addCardToWastePile
+            setCard: addCardToWastePile
         }
         return {...state, wastePile, hand}
     }
 }
 
 export function setCard(state:State):State {
-    return state
+    if (state.hand === undefined) return state
+    return state.hand.setCard(state)
 }
 
 export function moveCard(event:MouseEvent):EventFn {
