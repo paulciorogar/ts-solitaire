@@ -1,8 +1,9 @@
 import { newCard } from './cardComponent'
 import { Component } from './component'
 import { moveCard, nextCard, pickUpCardFromWastePile, setCard } from './game'
-import { Card, EventFn, NO_OP, PickUpCardFn, State } from './state'
+import { Card, EventFn, NO_OP, PickUpCardFn, State, Hand } from './state';
 import { dom, px, throttle, top } from './utility'
+import { Maybe } from '../maybe';
 
 export class Factory {
 
@@ -12,9 +13,9 @@ export class Factory {
         const factory = this
         const element = this.document.createElement('div')
         const moveCardCallback = this.moveCard()
-        element.addEventListener('mouseup', this.setCard())
+        // element.addEventListener('mouseup', this.setCard())
 
-        let handComponent:Component<any>|undefined = undefined
+        let handComponent:Maybe<Component<any>> = Maybe.nothing()
         element.style.position = 'fixed'
         element.style.width = '100%'
         element.style.height = '100%'
@@ -40,17 +41,27 @@ export class Factory {
                 dom.updateDimensions(element, state.container)
                 dom.updatePosition(element, state.container)
             }
+
             if (state.hand !== oldState.hand) {
-                if (state.hand === undefined && handComponent) {
+                handComponent = state.hand.cata(removeComponent, addComponent)
+            }
+
+            function removeComponent():Maybe<Component<any>> {
+                return handComponent.bind(cmp => {
                     document.body.removeEventListener('mousemove',  moveCardCallback)
-                    component.remove(handComponent)
-                    handComponent = undefined
-                }
-                if (state.hand && handComponent === undefined) {
-                    handComponent = factory.hand(state.hand.card, state)
+                    component.remove(cmp)
+                    return Maybe.nothing(cmp)
+                })
+            }
+
+            function addComponent(hand:Hand) {
+                return handComponent.catchMap(() => {
+                    const newHandComponent = factory.hand(hand.card, state)
+                    newHandComponent.element.addEventListener('mouseup', factory.setCard())
                     document.body.addEventListener('mousemove', moveCardCallback)
-                    component.append(handComponent)
-                }
+                    component.append(newHandComponent)
+                    return Maybe.just(newHandComponent)
+                })
             }
         }
     }
@@ -59,7 +70,8 @@ export class Factory {
         return this.card(card, state, NO_OP, fetchData)
 
         function fetchData(state:State):Card|undefined {
-            return state.hand?.card
+            return state.hand.fold(undefined)(hand => hand.card)
+            // return state.hand?.card
         }
     }
 

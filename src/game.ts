@@ -1,5 +1,6 @@
-import { Card, CardSlot, conf, Dimensions, EventFn, Hand, NextFn, Point, RenderFn, State, PickUpCardFn } from './state';
+import { Card, CardSlot, conf, Dimensions, EventFn, Hand, NextFn, Point, RenderFn, State, PickUpCardFn, NO_OP, Rectangle, newRectangle } from './state';
 import { pipe } from './utility'
+import { Maybe } from '../maybe';
 
 export class Game {
 
@@ -50,9 +51,22 @@ export function next(state:State):State {
         .map(containerSize)
         .map(cardSize)
         .map(cardSlotsPositions)
+        .map(handCardDropLocation)
         .current
 }
 
+function handCardDropLocation(state:State):State {
+    return state.hand.fold(state)(hand => {
+        state.packing1
+        return {...state, }
+    })
+}
+
+function availableSlots(state:State):CardSlot[] {
+    return [
+
+    ]
+}
 
 function processEvents(state:State):State {
     state = state.eventQ.reduce((result, fn) => fn(result), state)
@@ -116,12 +130,17 @@ function cardSlotsPositions(state:State, oldState:State):State {
         .pipe(updateSize(state.cardSize))
         .pipe(updatePosition(position))
         .pipe(updateCards)
+        .pipe(updateRectangle)
         .run()
 
         function updateCards(data:CardSlot):CardSlot {
             const update = updatePosition(data)
             const cards = data.cards.map(update)
             return {...data, cards: cards}
+        }
+
+        function updateRectangle(data:CardSlot):CardSlot {
+            return {...data, rectangle: newRectangle(data, data)}
         }
     }
 
@@ -145,36 +164,43 @@ export function pickUpCardFromWastePile(event:MouseEvent):EventFn {
         const card = cards.pop()
         if (card === undefined) return state
         const wastePile:CardSlot = {...state.wastePile, cards}
-        const hand:Hand = {
+        const newHand:Hand = {
             startX: event.screenX,
             startY: event.screenY,
             card,
-            setCard: addCardToWastePile
+            returnCard: addCardToWastePile,
+            setCard: Maybe.nothing()
         }
+        const hand = Maybe.from(newHand)
         return {...state, wastePile, hand}
     }
 }
 
 export function setCard(state:State):State {
-    if (state.hand === undefined) return state
-    return state.hand.setCard(state)
+    return state.hand.fold(state)(hand => {
+        return hand.setCard.cata(
+            () => hand.returnCard(state),
+            fn => fn(state)
+        )
+    })
 }
 
 export function moveCard(event:MouseEvent):EventFn {
     return (state:State):State => {
-        if (state.hand === undefined) return state
-        const point:Point = {
-            x: state.hand.card.x + (event.screenX - state.hand.startX),
-            y: state.hand.card.y + (event.screenY - state.hand.startY),
-        }
-        const move = updatePosition(point)
-        const hand:Hand = {
-            ...state.hand,
-            card: move(state.hand.card),
-            startX: event.screenX,
-            startY: event.screenY
-        }
-        return {...state, hand}
+        return state.hand.fold(state)(hand => {
+            const point:Point = {
+                x: hand.card.x + (event.screenX - hand.startX),
+                y: hand.card.y + (event.screenY - hand.startY),
+            }
+            const move = updatePosition(point)
+            const newHand:Hand = {
+                ...hand,
+                card: move(hand.card),
+                startX: event.screenX,
+                startY: event.screenY
+            }
+            return {...state, hand: Maybe.just(newHand)}
+        })
     }
 }
 
@@ -184,22 +210,23 @@ export function nextCard(state:State):State {
     const updateWastePilePosition = updatePosition(state.wastePile)
     if (topCard) {
         const nextCard:Card = updateWastePilePosition(topCard)
-        const hand:CardSlot = {...state.sourcePile, cards: handCards}
+        const sourcePile:CardSlot = {...state.sourcePile, cards: handCards}
         const wastePileCards = [...state.wastePile.cards, nextCard]
         const wastePile:CardSlot = {...state.wastePile, cards: wastePileCards}
-        return {...state, sourcePile: hand, wastePile}
+        return {...state, sourcePile: sourcePile, wastePile}
     } else {
         const handCards:Card[] = [...state.wastePile.cards].reverse()
-        const hand:CardSlot = {...state.sourcePile, cards: handCards}
+        const sourcePile:CardSlot = {...state.sourcePile, cards: handCards}
         const wastePile:CardSlot = {...state.wastePile, cards: []}
-        return {...state, sourcePile: hand, wastePile}
+        return {...state, sourcePile: sourcePile, wastePile}
     }
 }
 
 export function addCardToWastePile(state:State):State {
-    if (state.hand === undefined) return state
-    const updateCardPosition = updatePosition(state.wastePile)
-    const cards = [...state.wastePile.cards, updateCardPosition(state.hand.card)]
-    const wastePile:CardSlot = {...state.wastePile, cards}
-    return {...state, wastePile: wastePile, hand: undefined}
+    return state.hand.fold(state)(hand => {
+        const updateCardPosition = updatePosition(state.wastePile)
+        const cards = [...state.wastePile.cards, updateCardPosition(hand.card)]
+        const wastePile:CardSlot = {...state.wastePile, cards}
+        return {...state, wastePile: wastePile, hand: Maybe.nothing()}
+    })
 }

@@ -1,3 +1,4 @@
+import { Maybe } from '../maybe';
 
 export const conf = Object.freeze({
     backgroundColor: '#000000',
@@ -23,6 +24,7 @@ export type MoveCardFn = (event:MouseEvent)=>void
 
 export type Dimensions = {readonly width:number, readonly height:number}
 export type Point = {readonly x:number, readonly y:number }
+export type Rectangle = {a:Point, b:Point, c:Point, d:Point}
 
 export type Orientation = 'up'|'down'
 export type Spade = '\u2660'
@@ -37,16 +39,17 @@ export type Card = {
     readonly number:CardNumber
 } & Point
 export type CardStack = {cards: ReadonlyArray<Card>}
-export type CardSlot = Dimensions & Point & CardStack
+export type CardSlot = Dimensions & Point & CardStack & {rectangle:Rectangle}
 export type Hand = {
-    startX:number,
-    startY:number,
-    card:Card,
-    setCard:EventFn
+    startX:number
+    startY:number
+    card:Card
+    returnCard:EventFn
+    setCard:Maybe<EventFn>
 }
 
 export type State = {
-    readonly hand:Hand|undefined
+    readonly hand:Maybe<Hand>
     readonly eventQ:ReadonlyArray<EventFn>
     readonly body: Dimensions
     readonly container: Dimensions & Point
@@ -68,25 +71,37 @@ export type State = {
 
 export function newState():State {
     const cardDeck = newCardDeck()
+    const point = {x: 0, y: 0}
+    const size = {width: 0, height: 0}
+    const rectangle = newRectangle(point, size)
     return {
-        hand: undefined,
+        hand: Maybe.nothing(),
         eventQ: [],
-        body:       {width: 0, height: 0},
-        container:  {width: 0, height: 0, x: 0, y: 0},
-        cardSize:   {width: 0, height: 0},
-        sourcePile: {width: 0, height: 0, x: 0, y: 0, cards: [...cardDeck]},
-        wastePile:  {width: 0, height: 0, x: 0, y: 0, cards: []},
-        target1:    {width: 0, height: 0, x: 0, y: 0, cards: []},
-        target2:    {width: 0, height: 0, x: 0, y: 0, cards: []},
-        target3:    {width: 0, height: 0, x: 0, y: 0, cards: []},
-        target4:    {width: 0, height: 0, x: 0, y: 0, cards: []},
-        packing1:   {width: 0, height: 0, x: 0, y: 0, cards: []},
-        packing2:   {width: 0, height: 0, x: 0, y: 0, cards: []},
-        packing3:   {width: 0, height: 0, x: 0, y: 0, cards: []},
-        packing4:   {width: 0, height: 0, x: 0, y: 0, cards: []},
-        packing5:   {width: 0, height: 0, x: 0, y: 0, cards: []},
-        packing6:   {width: 0, height: 0, x: 0, y: 0, cards: []},
-        packing7:   {width: 0, height: 0, x: 0, y: 0, cards: []},
+        body:       size,
+        container:  {...size, ...point},
+        cardSize:   size,
+        sourcePile: {...size, ...point, rectangle: rectangle, cards: [...cardDeck]},
+        wastePile:  {...size, ...point, rectangle: rectangle, cards: []},
+        target1:    {...size, ...point, rectangle: rectangle, cards: []},
+        target2:    {...size, ...point, rectangle: rectangle, cards: []},
+        target3:    {...size, ...point, rectangle: rectangle, cards: []},
+        target4:    {...size, ...point, rectangle: rectangle, cards: []},
+        packing1:   {...size, ...point, rectangle: rectangle, cards: []},
+        packing2:   {...size, ...point, rectangle: rectangle, cards: []},
+        packing3:   {...size, ...point, rectangle: rectangle, cards: []},
+        packing4:   {...size, ...point, rectangle: rectangle, cards: []},
+        packing5:   {...size, ...point, rectangle: rectangle, cards: []},
+        packing6:   {...size, ...point, rectangle: rectangle, cards: []},
+        packing7:   {...size, ...point, rectangle: rectangle, cards: []},
+    }
+}
+
+export function newRectangle(origin:Point, size:Dimensions):Rectangle {
+    return {
+        a: origin,
+        b: {x: origin.x + size.width, y: origin.y},
+        c: {x: origin.x + size.width, y: origin.y + size.height},
+        d: {x: origin.x, y: origin.y + size.height},
     }
 }
 

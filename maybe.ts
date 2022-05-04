@@ -13,6 +13,10 @@ class Some<A> {
         return !this.isValue
     }
 
+    bind<B>(bindFn:(val:A)=>Maybe<B>) {
+        return bindFn(this.val)
+    }
+
     map<B>(transformer:(value:A)=>B):Maybe<B> {
         return Some.from(transformer(this.val))
     }
@@ -22,13 +26,13 @@ class Some<A> {
     }
 
     fold<B>(defaultValue:B){
-        return (fn:(value:A)=>B) => {
+        return <C>(fn:(value:A)=>C):B|C => {
             return fn(this.val)
         }
     }
 
-    orSome<B>(otherValue:B):A {
-        return this.val
+    catchMap<B>(fn:()=>Maybe<B>):Maybe<A>|Maybe<B> {
+        return this
     }
 }
 
@@ -40,6 +44,10 @@ class Nothing<A> {
         return !this.isValue
     }
 
+    bind():Nothing<A> {
+        return this
+    }
+
     map<B>():Maybe<B> {
         return new Nothing()
     }
@@ -49,13 +57,13 @@ class Nothing<A> {
     }
 
     fold<B>(defaultValue:B){
-        return (fn:(value:A)=>B) => {
+        return <C>(fn:(value:A)=>C):B|C => {
             return defaultValue
         }
     }
 
-    orSome<B>(otherValue:B):B {
-        return otherValue
+    catchMap<B>(fn:()=>Maybe<B>):Maybe<A>|Maybe<B> {
+        return fn()
     }
 }
 
@@ -70,7 +78,7 @@ export const Maybe = {
         return Some.from(val)
     },
 
-    nothing<A>():Maybe<A> {
-        return new Nothing()
+    nothing<A>(data?:A):Maybe<A> {
+        return new Nothing<A>()
     }
 }
