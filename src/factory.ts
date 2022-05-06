@@ -1,9 +1,9 @@
+import { Maybe } from '../maybe'
 import { newCard } from './cardComponent'
 import { Component } from './component'
-import { moveCard, nextCard, pickUpCardFromWastePile, setCard } from './game'
-import { Card, EventFn, NO_OP, PickUpCardFn, State, Hand } from './state';
+import { moveCard, nextCard, pickUpCardFromTarget1, pickUpCardFromWastePile, setCard } from './game'
+import { Card, EventFn, Hand, NO_OP, PickUpCardFn, State } from './state'
 import { dom, px, throttle, top } from './utility'
-import { Maybe } from '../maybe';
 
 export class Factory {
 
@@ -149,8 +149,8 @@ export class Factory {
         }
 
         function topCardData(state:State):Card|undefined {
-            const [_,second] = top(state.wastePile.cards, 2)
-            return second
+            const [data] = top(state.wastePile.cards, 1)
+            return data
         }
 
         function pickUpCard(event:MouseEvent) {
@@ -160,13 +160,44 @@ export class Factory {
 
     target1():Component<'div'> {
         const element = this.cardSlotElement()
-        const result = new Component(element, update)
-        return result
+        const update = updateFn(this)
+        const component = new Component(element, update)
+        let topCard:Maybe<Component<any>> = Maybe.nothing()
+        let bottomCard:Maybe<Component<any>> = Maybe.nothing()
+        return component
 
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            if (state.target1 === oldState.target1) return
-            dom.updateDimensions(element, state.target1)
-            dom.updatePosition(element, state.target1)
+        function updateFn(factory:Factory) {
+            return function(state:State, oldState:State, component:Component<'div'>) {
+                if (state.target1 === oldState.target1) return
+                dom.updateDimensions(element, state.target1)
+                dom.updatePosition(element, state.target1)
+
+                if (state.target1.cards !== oldState.target1.cards) {
+                    renderCards(state, factory)
+                }
+            }
+        }
+
+        function renderCards(state:State, factory:Factory) {
+            const [bottomCardData, topCardData] = top(state.target1.cards, 2)
+            component.removeAll()
+            if (bottomCardData) {
+                component.append(factory.card(bottomCardData, state, NO_OP, fetchBottomCardData))
+            }
+
+            if (topCardData) {
+                component.append(factory.card(topCardData, state, pickUpCardFromTarget1, fetchTopCardData))
+            }
+        }
+
+        function fetchBottomCardData(state:State):Card|undefined {
+            const [result, _] = top(state.target1.cards, 2)
+            return result
+        }
+
+        function fetchTopCardData(state:State):Card|undefined {
+            const [result] = top(state.target1.cards, 1)
+            return result
         }
     }
 

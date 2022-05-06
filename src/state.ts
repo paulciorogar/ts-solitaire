@@ -1,4 +1,4 @@
-import { Maybe } from '../maybe';
+import { Maybe } from '../maybe'
 
 export const conf = Object.freeze({
     backgroundColor: '#000000',
@@ -15,10 +15,12 @@ export const conf = Object.freeze({
 const cardNumbers = [1,2,3,4,5,6,7,8,9,10,11,12,13] as const
 
 export function NO_OP() {}
+export const id:IdFunction<any> = (data) => data
 
-export type NextFn = (state:State) => State
+export type IdFunction<A> = (data:A) => A
+export type NextFn = IdFunction<State>
 export type RenderFn = (state:State, oldState:State) => void
-export type EventFn = (state:State) => State
+export type EventFn = IdFunction<State>
 export type PickUpCardFn = (event:MouseEvent) => void
 export type MoveCardFn = (event:MouseEvent)=>void
 
@@ -48,7 +50,12 @@ export type Hand = {
     setCard:Maybe<EventFn>
 }
 
+export type UpdateSlotFn = (state:State, slot:CardSlot)=>State
+export type AvailableSlot = {slot:CardSlot, addCard:EventFn}
+export type AvailableSlots = ReadonlyArray<AvailableSlot>
+
 export type State = {
+    readonly availableSlots:AvailableSlots
     readonly hand:Maybe<Hand>
     readonly eventQ:ReadonlyArray<EventFn>
     readonly body: Dimensions
@@ -75,6 +82,7 @@ export function newState():State {
     const size = {width: 0, height: 0}
     const rectangle = newRectangle(point, size)
     return {
+        availableSlots: [],
         hand: Maybe.nothing(),
         eventQ: [],
         body:       size,

@@ -1,6 +1,7 @@
-import { Card, CardSlot, conf, Dimensions, EventFn, Hand, NextFn, Point, RenderFn, State, PickUpCardFn, NO_OP, Rectangle, newRectangle } from './state';
-import { pipe } from './utility'
-import { Maybe } from '../maybe';
+import { pipe, pointInRectangle } from './utility'
+import { Maybe } from '../maybe'
+import { AvailableSlot, Card, CardSlot, conf, Dimensions, EventFn, Hand, id, IdFunction,
+    newRectangle, NextFn, Point, RenderFn, State } from './state'
 
 export class Game {
 
@@ -51,21 +52,49 @@ export function next(state:State):State {
         .map(containerSize)
         .map(cardSize)
         .map(cardSlotsPositions)
+        .map(availableSlots)
         .map(handCardDropLocation)
         .current
 }
 
 function handCardDropLocation(state:State):State {
     return state.hand.fold(state)(hand => {
-        state.packing1
-        return {...state, }
+        const cursorOverSlot = (result:Maybe<AvailableSlot>, data:AvailableSlot) => {
+            if (pointInRectangle(hand.card, data.slot.rectangle)) return Maybe.from(data)
+            return result
+        }
+
+
+        return state.availableSlots
+            .reduce(cursorOverSlot, Maybe.nothing<AvailableSlot>())
+            .fold(state)(data => {
+                const setCard = updateData<Hand>({setCard: Maybe.just(data.addCard)})
+                return pipe(state)
+                    .pipe(updateHand(hand => hand.map(setCard)))
+                    .run()
+            })
     })
 }
 
-function availableSlots(state:State):CardSlot[] {
-    return [
 
-    ]
+function updateData<A>(spec:Partial<A>):IdFunction<A> {
+    return data => ({...data, ...spec})
+}
+
+function availableSlots(state:State):State {
+    return {...state, availableSlots: [
+        {slot: state.target1, addCard:addCardToTrack1},
+        {slot: state.target2, addCard:id},
+        {slot: state.target3, addCard:id},
+        {slot: state.target4, addCard:id},
+        {slot: state.packing1, addCard:id},
+        {slot: state.packing2, addCard:id},
+        {slot: state.packing3, addCard:id},
+        {slot: state.packing4, addCard:id},
+        {slot: state.packing5, addCard:id},
+        {slot: state.packing6, addCard:id},
+        {slot: state.packing7, addCard:id},
+    ]}
 }
 
 function processEvents(state:State):State {
@@ -173,6 +202,49 @@ export function pickUpCardFromWastePile(event:MouseEvent):EventFn {
         }
         const hand = Maybe.from(newHand)
         return {...state, wastePile, hand}
+    }
+}
+
+export function pickUpCardFromTarget1(event:MouseEvent):EventFn {
+    return (state:State):State => {
+        const cards = [...state.target1.cards]
+        const card = cards.pop()
+        if (card === undefined) return state
+        const newHand:Hand = {
+            startX: event.screenX,
+            startY: event.screenY,
+            card,
+            returnCard: addCardToTrack1,
+            setCard: Maybe.nothing()
+        }
+        return pipe(state)
+            .pipe(updateHand(() => Maybe.just(newHand)))
+            .pipe(updateTarget1({cards: cards}))
+            .run()
+    }
+}
+
+function addCardToTrack1(state:State):State {
+    const updateCardPosition = updatePosition(state.target1)
+    return state.hand.cata(
+        () => state,
+        hand => pipe(state)
+            .pipe(updateHand(() => Maybe.nothing()))
+            .pipe(updateTarget1({
+                cards: state.target1.cards.concat([updateCardPosition(hand.card)])}))
+            .run()
+    )
+}
+
+function updateHand(fn:IdFunction<Maybe<Hand>>):IdFunction<State> {
+    return function (state:State):State {
+        return {...state, hand: fn(state.hand)}
+    }
+}
+
+function updateTarget1(spec:Partial<CardSlot>):IdFunction<State> {
+    return function (state:State):State {
+        return {...state, target1: {...state.target1, ...spec}}
     }
 }
 
