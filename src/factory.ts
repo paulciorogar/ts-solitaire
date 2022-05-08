@@ -1,9 +1,9 @@
 import { Maybe } from '../maybe'
-import { newCard } from './cardComponent'
+import { newCard, _newCard } from './cardComponent'
 import { Component } from './component'
 import { moveCard, nextCard, pickUpCardFromTarget1, pickUpCardFromWastePile, setCard } from './game'
-import { Card, EventFn, Hand, NO_OP, PickUpCardFn, State } from './state'
-import { dom, px, throttle, top } from './utility'
+import { Card, CardDataFn, conf, EventFn, Hand, NO_OP, PickUpCardFn, State } from './state'
+import { dom, px, throttle, top, _top } from './utility'
 
 export class Factory {
 
@@ -13,7 +13,6 @@ export class Factory {
         const factory = this
         const element = this.document.createElement('div')
         const moveCardCallback = this.moveCard()
-        // element.addEventListener('mouseup', this.setCard())
 
         let handComponent:Maybe<Component<any>> = Maybe.nothing()
         element.style.position = 'fixed'
@@ -71,7 +70,6 @@ export class Factory {
 
         function fetchData(state:State):Card|undefined {
             return state.hand.fold(undefined)(hand => hand.card)
-            // return state.hand?.card
         }
     }
 
@@ -103,20 +101,13 @@ export class Factory {
         const factory = this
         const element = this.cardSlotElement()
         const component = new Component(element, update)
-        let topCard:Component<any>|undefined = undefined
-        let bottomCard:Component<any>|undefined = undefined
-
         renderCards(state)
-
         return component
 
         function update(state:State, oldState:State, component:Component<'div'>) {
             if (state.wastePile === oldState.wastePile) return
-
-            if (state.wastePile.height !== oldState.wastePile.height) {
-                dom.updateDimensions(element, state.wastePile)
-                dom.updatePosition(element, state.wastePile)
-            }
+            dom.updateDimensions(element, state.wastePile)
+            dom.updatePosition(element, state.wastePile)
 
             if (state.wastePile.cards !== oldState.wastePile.cards) {
                 renderCards(state)
@@ -124,33 +115,16 @@ export class Factory {
         }
 
         function renderCards(state:State) {
-            const [first, second] = top(state.wastePile.cards, 2)
-            if (first && bottomCard === undefined) {
-                bottomCard = factory.card(first, state, pickUpCard, bottomCardData)
-                component.append(bottomCard)
-            }
-            if (second && topCard === undefined) {
-                topCard = factory.card(second, state, pickUpCard, topCardData)
-                component.append(topCard)
-            }
-            if (second === undefined && topCard) {
-                component.remove(topCard)
-                topCard = undefined
-            }
-            if (first === undefined && bottomCard) {
-                component.remove(bottomCard)
-                bottomCard = undefined
-            }
-        }
+            component.removeAll()
+            const lazyCardData = (state:State) => _top(state.wastePile.cards)
+            const cardData = lazyCardData(state)
+            cardData.bind(addCard)
 
-        function bottomCardData(state:State):Card|undefined {
-            const [first,_] = top(state.wastePile.cards, 2)
-            return first
-        }
-
-        function topCardData(state:State):Card|undefined {
-            const [data] = top(state.wastePile.cards, 1)
-            return data
+            function addCard(data:Card) {
+                const comp = factory._card(data, state, pickUpCard, lazyCardData)
+                component.append(comp)
+                return Maybe.just(comp)
+            }
         }
 
         function pickUpCard(event:MouseEvent) {
@@ -159,15 +133,15 @@ export class Factory {
     }
 
     target1():Component<'div'> {
+        const factory = this
         const element = this.cardSlotElement()
         const update = updateFn(this)
         const component = new Component(element, update)
-        let topCard:Maybe<Component<any>> = Maybe.nothing()
-        let bottomCard:Maybe<Component<any>> = Maybe.nothing()
         return component
 
         function updateFn(factory:Factory) {
             return function(state:State, oldState:State, component:Component<'div'>) {
+
                 if (state.target1 === oldState.target1) return
                 dom.updateDimensions(element, state.target1)
                 dom.updatePosition(element, state.target1)
@@ -175,6 +149,7 @@ export class Factory {
                 if (state.target1.cards !== oldState.target1.cards) {
                     renderCards(state, factory)
                 }
+
             }
         }
 
@@ -182,11 +157,11 @@ export class Factory {
             const [bottomCardData, topCardData] = top(state.target1.cards, 2)
             component.removeAll()
             if (bottomCardData) {
-                component.append(factory.card(bottomCardData, state, NO_OP, fetchBottomCardData))
+                component.append(factory.card(bottomCardData, state, pickUpCard, fetchBottomCardData))
             }
 
             if (topCardData) {
-                component.append(factory.card(topCardData, state, pickUpCardFromTarget1, fetchTopCardData))
+                component.append(factory.card(topCardData, state, pickUpCard, fetchTopCardData))
             }
         }
 
@@ -198,6 +173,10 @@ export class Factory {
         function fetchTopCardData(state:State):Card|undefined {
             const [result] = top(state.target1.cards, 1)
             return result
+        }
+
+        function pickUpCard(event:MouseEvent) {
+            factory.newEvent(pickUpCardFromTarget1(event))
         }
     }
 
@@ -325,6 +304,10 @@ export class Factory {
         return newCard(card, this.document, state, pickUpCard, fetchData)
     }
 
+    _card(card:Card, state:State, pickUpCard:PickUpCardFn, cardData:CardDataFn) {
+        return _newCard(card, this.document, state, pickUpCard, cardData)
+    }
+
     setCard() {
         return () => this.newEvent(setCard)
     }
@@ -359,7 +342,7 @@ export class Factory {
         element.style.position = 'fixed'
         element.style.boxSizing = 'border-box'
         element.style.background = '#1f1d32'
-        element.style.border = '2px solid #3d3861'
+        element.style.border = ['2px solid', conf.cardSlotBorderColor].join(' ')
         return element
     }
 }

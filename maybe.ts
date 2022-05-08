@@ -4,7 +4,7 @@ class Some<A> {
 
     private constructor(private val:A) {}
 
-    static from<B>(val:B):Maybe<B> {
+    static from<B>(val:B|null|void):Maybe<B> {
         if (val === null || val === undefined) return new Nothing()
         return new Some(val)
     }
@@ -33,6 +33,10 @@ class Some<A> {
 
     catchMap<B>(fn:()=>Maybe<B>):Maybe<A>|Maybe<B> {
         return this
+    }
+
+    equals(other:Maybe<A>) {
+        return other.fold(false)(val => val === this.val)
     }
 }
 
@@ -65,6 +69,11 @@ class Nothing<A> {
     catchMap<B>(fn:()=>Maybe<B>):Maybe<A>|Maybe<B> {
         return fn()
     }
+
+    equals(other:Maybe<A>) {
+        return !other.isValue
+    }
+
 }
 
 export type Maybe<A> = Some<A>|Nothing<A>
@@ -74,7 +83,7 @@ export const Maybe = {
         return Some.from(val)
     },
 
-    from<A>(val:A):Maybe<A> {
+    from<A>(val:A|null|void):Maybe<A> {
         return Some.from(val)
     },
 

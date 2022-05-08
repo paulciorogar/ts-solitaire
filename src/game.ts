@@ -1,7 +1,9 @@
-import { pipe, pointInRectangle } from './utility'
 import { Maybe } from '../maybe'
-import { AvailableSlot, Card, CardSlot, conf, Dimensions, EventFn, Hand, id, IdFunction,
-    newRectangle, NextFn, Point, RenderFn, State } from './state'
+import {
+    Card, CardSlot, conf, Dimensions, EligibleSlot, EventFn, Hand, IdFunction,
+    newRectangle, NextFn, Point, Rectangle, RenderFn, SlotFn, slotRectangle, State, UpdateSlotFn
+} from './state'
+import { pipe } from './utility'
 
 export class Game {
 
@@ -52,49 +54,9 @@ export function next(state:State):State {
         .map(containerSize)
         .map(cardSize)
         .map(cardSlotsPositions)
-        .map(availableSlots)
-        .map(handCardDropLocation)
+        .map(eligibleSlots)
+        .map(targetSlot)
         .current
-}
-
-function handCardDropLocation(state:State):State {
-    return state.hand.fold(state)(hand => {
-        const cursorOverSlot = (result:Maybe<AvailableSlot>, data:AvailableSlot) => {
-            if (pointInRectangle(hand.card, data.slot.rectangle)) return Maybe.from(data)
-            return result
-        }
-
-
-        return state.availableSlots
-            .reduce(cursorOverSlot, Maybe.nothing<AvailableSlot>())
-            .fold(state)(data => {
-                const setCard = updateData<Hand>({setCard: Maybe.just(data.addCard)})
-                return pipe(state)
-                    .pipe(updateHand(hand => hand.map(setCard)))
-                    .run()
-            })
-    })
-}
-
-
-function updateData<A>(spec:Partial<A>):IdFunction<A> {
-    return data => ({...data, ...spec})
-}
-
-function availableSlots(state:State):State {
-    return {...state, availableSlots: [
-        {slot: state.target1, addCard:addCardToTrack1},
-        {slot: state.target2, addCard:id},
-        {slot: state.target3, addCard:id},
-        {slot: state.target4, addCard:id},
-        {slot: state.packing1, addCard:id},
-        {slot: state.packing2, addCard:id},
-        {slot: state.packing3, addCard:id},
-        {slot: state.packing4, addCard:id},
-        {slot: state.packing5, addCard:id},
-        {slot: state.packing6, addCard:id},
-        {slot: state.packing7, addCard:id},
-    ]}
 }
 
 function processEvents(state:State):State {
@@ -159,7 +121,6 @@ function cardSlotsPositions(state:State, oldState:State):State {
         .pipe(updateSize(state.cardSize))
         .pipe(updatePosition(position))
         .pipe(updateCards)
-        .pipe(updateRectangle)
         .run()
 
         function updateCards(data:CardSlot):CardSlot {
@@ -167,12 +128,48 @@ function cardSlotsPositions(state:State, oldState:State):State {
             const cards = data.cards.map(update)
             return {...data, cards: cards}
         }
-
-        function updateRectangle(data:CardSlot):CardSlot {
-            return {...data, rectangle: newRectangle(data, data)}
-        }
     }
+}
 
+function eligibleSlots(state:State):State {
+    const overlappingArea = (card:Card, slot:CardSlot) => {
+        const rect1 = newRectangle(card, state.cardSize)
+        const rect2 = slotRectangle(slot)
+        return shape.overlappingArea(rect1, rect2)
+    }
+    const calculateOverlappingArea = (state:State, slot:CardSlot) =>
+        state.hand.fold(0)(hand => overlappingArea(hand.card, slot))
+
+    return {...state, eligibleSlots: [
+        {
+            overlappingArea: calculateOverlappingArea(state, state.target1),
+            slot: (state:State) => state.target1,
+            update: updateTarget1,
+            addCard: addCardToSlot(updateTarget1, (state:State) => state.target1)
+        },
+        {
+            overlappingArea: calculateOverlappingArea(state, state.target2),
+            slot: (state:State) => state.target2,
+            update: updateTarget2,
+            addCard: addCardToSlot(updateTarget2, (state:State) => state.target2)
+        }
+    ]}
+}
+
+function targetSlot(state:State):State {
+    return state.hand.cata(clear, findTargetSlot)
+
+    function clear() { return state }
+
+    function findTargetSlot(hand:Hand):State {
+        const byArea = (result:EligibleSlot, data:EligibleSlot) => {
+            return data.overlappingArea > result.overlappingArea ? data : result
+        }
+        const slot = state.eligibleSlots.reduce(byArea)
+        const addCardToSlot = Maybe.from((slot.overlappingArea === 0)? null : slot.addCard)
+        const newHand:Hand = {...hand, addCardToSlot}
+        return {...state, hand: Maybe.just(newHand)}
+    }
 }
 
 function updateSize(val:Dimensions) {
@@ -197,8 +194,9 @@ export function pickUpCardFromWastePile(event:MouseEvent):EventFn {
             startX: event.screenX,
             startY: event.screenY,
             card,
+            highlight:false,
             returnCard: addCardToWastePile,
-            setCard: Maybe.nothing()
+            addCardToSlot: Maybe.nothing()
         }
         const hand = Maybe.from(newHand)
         return {...state, wastePile, hand}
@@ -214,26 +212,50 @@ export function pickUpCardFromTarget1(event:MouseEvent):EventFn {
             startX: event.screenX,
             startY: event.screenY,
             card,
-            returnCard: addCardToTrack1,
-            setCard: Maybe.nothing()
+            highlight:false,
+            returnCard: addCardToSlot(updateTarget1, (state:State) => state.target1),
+            addCardToSlot: Maybe.nothing()
         }
         return pipe(state)
             .pipe(updateHand(() => Maybe.just(newHand)))
-            .pipe(updateTarget1({cards: cards}))
+            .pipe(updateTarget1(() => ({cards: cards})))
             .run()
     }
 }
 
-function addCardToTrack1(state:State):State {
+export function addCardToTarget1(state:State):State {
     const updateCardPosition = updatePosition(state.target1)
     return state.hand.cata(
         () => state,
         hand => pipe(state)
-            .pipe(updateHand(() => Maybe.nothing()))
-            .pipe(updateTarget1({
-                cards: state.target1.cards.concat([updateCardPosition(hand.card)])}))
-            .run()
+        .pipe(updateHand(() => Maybe.nothing()))
+        .pipe(updateTarget1(slot => ({cards: [...slot.cards, updateCardPosition(hand.card)]})))
+        .run()
     )
+}
+
+export function addCardToTarget2(state:State):State {
+    const updateCardPosition = updatePosition(state.target2)
+    return state.hand.cata(
+        () => state,
+        hand => pipe(state)
+        .pipe(updateHand(() => Maybe.nothing()))
+        .pipe(updateTarget2(slot => ({cards: [...slot.cards, updateCardPosition(hand.card)]})))
+        .run()
+    )
+}
+
+function addCardToSlot(updateSlot:UpdateSlotFn, slot:SlotFn) {
+    return function (state:State):State {
+        const updateCardPosition = updatePosition(slot(state))
+        return state.hand.cata(
+            () => state,
+            hand => pipe(state)
+            .pipe(updateHand(() => Maybe.nothing()))
+            .pipe(updateSlot(slot => ({cards: [...slot.cards, updateCardPosition(hand.card)]})))
+            .run()
+        )
+    }
 }
 
 function updateHand(fn:IdFunction<Maybe<Hand>>):IdFunction<State> {
@@ -242,18 +264,23 @@ function updateHand(fn:IdFunction<Maybe<Hand>>):IdFunction<State> {
     }
 }
 
-function updateTarget1(spec:Partial<CardSlot>):IdFunction<State> {
+function updateTarget1(fn:(slot:CardSlot)=>Partial<CardSlot>):IdFunction<State> {
     return function (state:State):State {
-        return {...state, target1: {...state.target1, ...spec}}
+        return {...state, target1: {...state.target1, ...fn(state.target1)}}
+    }
+}
+
+function updateTarget2(fn:(slot:CardSlot)=>Partial<CardSlot>):IdFunction<State> {
+    return function (state:State):State {
+        return {...state, target2: {...state.target2, ...fn(state.target2)}}
     }
 }
 
 export function setCard(state:State):State {
     return state.hand.fold(state)(hand => {
-        return hand.setCard.cata(
-            () => hand.returnCard(state),
-            fn => fn(state)
-        )
+        return hand.addCardToSlot.cata(returnCard, addCard)
+        function returnCard() {return hand.returnCard(state)}
+        function addCard(fn:IdFunction<State>) {return fn(state)}
     })
 }
 
@@ -271,7 +298,7 @@ export function moveCard(event:MouseEvent):EventFn {
                 startX: event.screenX,
                 startY: event.screenY
             }
-            return {...state, hand: Maybe.just(newHand)}
+            return updateHand(() => Maybe.just(newHand))(state)
         })
     }
 }
@@ -296,9 +323,42 @@ export function nextCard(state:State):State {
 
 export function addCardToWastePile(state:State):State {
     return state.hand.fold(state)(hand => {
-        const updateCardPosition = updatePosition(state.wastePile)
-        const cards = [...state.wastePile.cards, updateCardPosition(hand.card)]
-        const wastePile:CardSlot = {...state.wastePile, cards}
-        return {...state, wastePile: wastePile, hand: Maybe.nothing()}
+        const pushCard = updateWastePile(data => {
+            const updateCardPosition = updatePosition(state.wastePile)
+            const card = updateCardPosition(hand.card)
+            return {cards: data.cards.concat([card])}
+        })
+        return pipe(state)
+        .pipe(pushCard)
+        .pipe(updateHand(() => Maybe.nothing()))
+        .run()
     })
+}
+
+function updateWastePile(fn:(data:CardSlot)=>Partial<CardSlot>):IdFunction<State> {
+    return function(state) {
+        const wastePile = {...state.wastePile, ...fn(state.wastePile)}
+        return {...state, wastePile}
+    }
+}
+
+const shape = {
+    overlappingArea: function (rect1:Rectangle, rect2:Rectangle):number {
+        const area1 = Math.abs(rect1.a.x - rect1.b.x) * Math.abs(rect1.a.y - rect1.b.y)
+        const area2 = Math.abs(rect2.a.x - rect2.b.x) * Math.abs(rect2.a.y - rect2.b.y)
+
+        // Length of intersecting part
+        // starts from max(l1[x], l2[x]) of x-coordinate and
+        // ends at min(r1[x], r2[x]) x-coordinate
+        // by subtracting start from end we get required lengths
+        const x_dist = (Math.min(rect1.b.x, rect2.b.x)
+            - Math.max(rect1.a.x, rect2.a.x))
+
+        const y_dist = (Math.min(rect1.b.y, rect2.b.y)
+            - Math.max(rect1.a.y, rect2.a.y))
+
+        if (x_dist > 0 && y_dist > 0) {
+            return (area1 + area2 - (x_dist * y_dist))
+        } else {return 0}
+    }
 }
