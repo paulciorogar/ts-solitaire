@@ -38,6 +38,10 @@ class Some<A> {
     equals(other:Maybe<A>) {
         return other.fold(false)(val => val === this.val)
     }
+
+    orElse<B>(data:B):A|B {
+        return this.val
+    }
 }
 
 class Nothing<A> {
@@ -74,6 +78,9 @@ class Nothing<A> {
         return !other.isValue
     }
 
+    orElse<B>(data:B):A|B {
+        return data
+    }
 }
 
 export type Maybe<A> = Some<A>|Nothing<A>

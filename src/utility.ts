@@ -45,6 +45,10 @@ export function _top<A>(list:A[]|ReadonlyArray<A>):Maybe<A> {
     return Maybe.from(element)
 }
 
+export function topN<A>(list:A[]|ReadonlyArray<A>, number:number):Maybe<ReadonlyArray<A>> {
+    return Maybe.from(list.slice(-1 * number))
+}
+
 export const dom = {
     updateDimensions: function(element:HTMLElement, data:Dimensions):void {
         element.style.width = px(data.width)
@@ -55,4 +59,8 @@ export const dom = {
         element.style.top = px(data.y)
         element.style.left = px(data.x)
     }
+}
+
+export function removeTop<A>(list:ReadonlyArray<A>|A[], number = 1):A[] {
+    return list.slice(0, list.length - (number + 1))
 }

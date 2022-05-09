@@ -24,7 +24,8 @@ export type NextFn = IdFunction<State>
 export type RenderFn = (state:State, oldState:State) => void
 export type EventFn = IdFunction<State>
 export type PickUpCardFn = (event:MouseEvent) => void
-export type CardDataFn = (state:State) => Maybe<Card>
+export type CardDataFn = (state:State) => Maybe<ReadonlyArray<Card>>
+export type SlotDataFn = (state:State) => CardSlot
 export type MoveCardFn = (event:MouseEvent)=>void
 export type UpdateSlotFn = (fn:(slot:CardSlot)=>Partial<CardSlot>)=>IdFunction<State>
 export type SlotFn = (state:State)=>CardSlot
@@ -49,6 +50,10 @@ export type CardStack = {cards: ReadonlyArray<Card>}
 export type CardSlot = Dimensions & Point & CardStack & {
     addCard:IdFunction<State>
 }
+export type LazyCardSlot = {
+    data: SlotFn,
+    update: UpdateSlotFn
+}
 export type EligibleSlot = {
     overlappingArea: number,
     slot: SlotFn,
@@ -59,7 +64,7 @@ export type EligibleSlot = {
 export type Hand = {
     startX:number
     startY:number
-    card:Card
+    cards:ReadonlyArray<Card>
     highlight:boolean
     returnCard:EventFn
     addCardToSlot:Maybe<IdFunction<State>>

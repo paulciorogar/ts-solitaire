@@ -1,40 +1,37 @@
 import { Component } from './component'
 import { Factory } from './factory'
-import { Card, CardDataFn, PickUpCardFn, State } from './state'
+import { CardDataFn, PickUpCardFn, SlotDataFn, State } from './state'
 import { dom } from './utility'
 
 export type TargetSlotFactorySpec = {
     state:State
-    factory:Factory
+    element:HTMLDivElement
     cardData:CardDataFn
-    pickUpCard:PickUpCardFn
+    slotData:SlotDataFn
     newCardComponent:(state:State)=>Component<any>
 }
 
 export function targetSlotFactory(spec:TargetSlotFactorySpec):Component<any> {
-    const element = spec.factory.cardSlotElement()
+    const {state, element, cardData, slotData, newCardComponent} = spec
     const component = new Component(element, update)
-    renderCard(spec.state)
+    renderCard(state)
     return component
 
     function update(state:State, oldState:State) {
-        if (state.target1 === oldState.target1) return
-        dom.updateDimensions(element, state.target1)
-        dom.updatePosition(element, state.target1)
+        const slot = slotData(state)
+        const oldSlot = slotData(oldState)
+        if (slot === oldSlot) return
 
-        if (state.target1.cards !== oldState.target1.cards) {
+        dom.updateDimensions(element, slot)
+        dom.updatePosition(element, slot)
+
+        if (slot.cards !== oldSlot.cards) {
             renderCard(state)
         }
     }
 
     function renderCard(state:State) {
         component.removeAll()
-        spec.cardData(state).map(card => component.append(spec.newCardComponent(state)))
-    }
-}
-
-function newCardComponent(factory:Factory, pickUpCard:PickUpCardFn, cardData:CardDataFn) {
-    return function (state:State) {
-        return factory.__card(state, pickUpCard, cardData)
+        cardData(state).map(() => component.append(newCardComponent(state)))
     }
 }
