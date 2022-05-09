@@ -2,7 +2,7 @@ import { Maybe } from '../maybe'
 import { newCard } from './cardComponent'
 import { Component } from './component'
 import {
-    addCardsToSlot, lazyTarget1, lazyTarget2, lazyWastePile, moveCard,
+    addCardsToSlot, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4, lazyWastePile, moveCard,
     nextCard, removeTopCardsFromSlot, setCard, updateHand
 } from './game'
 import { Card, CardDataFn, conf, EventFn, Hand, LazyCardSlot, NO_OP, PickUpCardFn, State } from './state'
@@ -28,8 +28,8 @@ export class Factory {
         container.append(this.wastePile(state))
         container.append(this.target1(state))
         container.append(this.target2(state))
-        container.append(this.target3())
-        container.append(this.target4())
+        container.append(this.target3(state))
+        container.append(this.target4(state))
         container.append(this.packing1())
         container.append(this.packing2())
         container.append(this.packing3())
@@ -175,28 +175,30 @@ export class Factory {
         })
     }
 
-    target3():Component<'div'> {
-        const element = this.cardSlotElement()
-        const result = new Component(element, update)
-        return result
+    target3(state:State):Component<any> {
+        const cardData = (state:State) => top(state.target3.cards)
+        const pickUpCard = this.pickUpCards(lazyTarget3)
 
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            if (state.target3 === oldState.target3) return
-            dom.updateDimensions(element, state.target3)
-            dom.updatePosition(element, state.target3)
-        }
+        return targetSlotFactory({
+            state: state,
+            element: this.cardSlotElement(),
+            cardData: cardData,
+            slotData: lazyTarget3.data,
+            newCardComponent: this.card(pickUpCard, cardData)
+        })
     }
 
-    target4():Component<'div'> {
-        const element = this.cardSlotElement()
-        const result = new Component(element, update)
-        return result
+    target4(state:State):Component<any> {
+        const cardData = (state:State) => top(state.target4.cards)
+        const pickUpCard = this.pickUpCards(lazyTarget4)
 
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            if (state.target4 === oldState.target4) return
-            dom.updateDimensions(element, state.target4)
-            dom.updatePosition(element, state.target4)
-        }
+        return targetSlotFactory({
+            state: state,
+            element: this.cardSlotElement(),
+            cardData: cardData,
+            slotData: lazyTarget4.data,
+            newCardComponent: this.card(pickUpCard, cardData)
+        })
     }
 
     packing1():Component<'div'> {
@@ -344,7 +346,6 @@ export class Factory {
                 .pipe(removeTopCardsFromSlot(lazySlot, 1))
                 .run()
             })
-            }
-        )
+        })
     }
 }
