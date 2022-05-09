@@ -4,5 +4,26 @@
         "BCBC",
         "BCBP",
         "cata"
-    ]
+    ],
+    "editor.fontFamily": "Consolas",
+    "editor.renderWhitespace": "all",
+    "editor.autoClosingDelete": "always",
+    "editor.detectIndentation": false,
+    "editor.lineNumbers": "relative",
+    "editor.scrollBeyondLastColumn": 10,
+    "editor.unicodeHighlight.includeComments": true,
+    "editor.unicodeHighlight.nonBasicASCII": true,
+    "editor.cursorSurroundingLines": 5,
+    "diffEditor.renderSideBySide": false,
+    "files.trimTrailingWhitespace": true,
+    "terminal.integrated.defaultProfile.windows": "Git Bash",
+    "problems.showCurrentInStatus": true,
+    "javascript.preferences.importModuleSpecifier": "relative",
+    "typescript.format.semicolons": "remove",
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "typescript.tsserver.experimental.enableProjectDiagnostics": true,
+    "typescript.tsserver.watchOptions": {
+        "fallbackPolling": "fixedPollingInterval"
+    },
+    "typescript.updateImportsOnFileMove.enabled": "always"
 }
