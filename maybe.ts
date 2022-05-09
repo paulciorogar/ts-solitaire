@@ -17,8 +17,12 @@ class Some<A> {
         return bindFn(this.val)
     }
 
-    map<B>(transformer:(value:A)=>B):Maybe<B> {
-        return Some.from(transformer(this.val))
+    map<B>(fn:(value:A)=>NonNullable<B> ):Maybe<B> {
+        return Some.from(fn(this.val))
+    }
+
+    catchMap<B>(fn:()=>B):Maybe<A>|Maybe<B> {
+        return this
     }
 
     cata<B, C>(none:()=>B, some:(val:A)=>C) {
@@ -29,10 +33,6 @@ class Some<A> {
         return <C>(fn:(value:A)=>C):B|C => {
             return fn(this.val)
         }
-    }
-
-    catchMap<B>(fn:()=>Maybe<B>):Maybe<A>|Maybe<B> {
-        return this
     }
 
     equals(other:Maybe<A>) {
@@ -70,8 +70,8 @@ class Nothing<A> {
         }
     }
 
-    catchMap<B>(fn:()=>Maybe<B>):Maybe<A>|Maybe<B> {
-        return fn()
+    catchMap<B>(fn:()=>B):Maybe<A>|Maybe<B> {
+        return Some.from(fn())
     }
 
     equals(other:Maybe<A>) {
@@ -86,7 +86,7 @@ class Nothing<A> {
 export type Maybe<A> = Some<A>|Nothing<A>
 
 export const Maybe = {
-    just<A>(val:A):Maybe<A> {
+    just<A>(val:NonNullable<A>):Maybe<A> {
         return Some.from(val)
     },
 

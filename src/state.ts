@@ -1,5 +1,5 @@
 import { Maybe } from '../maybe'
-import { addCardToTarget1, addCardToWastePile } from './game'
+import { addCardsToWastePile, addCardToFn, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4 } from './game'
 
 export const conf = Object.freeze({
     backgroundColor: '#000000',
@@ -24,7 +24,7 @@ export type NextFn = IdFunction<State>
 export type RenderFn = (state:State, oldState:State) => void
 export type EventFn = IdFunction<State>
 export type PickUpCardFn = (event:MouseEvent) => void
-export type CardDataFn = (state:State) => Maybe<ReadonlyArray<Card>>
+export type CardDataFn = (state:State) => Maybe<Card>
 export type SlotDataFn = (state:State) => CardSlot
 export type MoveCardFn = (event:MouseEvent)=>void
 export type UpdateSlotFn = (fn:(slot:CardSlot)=>Partial<CardSlot>)=>IdFunction<State>
@@ -56,7 +56,7 @@ export type LazyCardSlot = {
 }
 export type EligibleSlot = {
     overlappingArea: number,
-    slot: SlotFn,
+    data: SlotFn,
     update: UpdateSlotFn
     addCard: IdFunction<State>
 }
@@ -65,7 +65,7 @@ export type Hand = {
     startX:number
     startY:number
     cards:ReadonlyArray<Card>
-    highlight:boolean
+    hoveringSlot:Maybe<LazyCardSlot>
     returnCard:EventFn
     addCardToSlot:Maybe<IdFunction<State>>
 }
@@ -109,11 +109,11 @@ export function newState():State {
         container:  {...size, ...point},
         cardSize:   size,
         sourcePile: {...size, ...point, addCard: Fn, cards: [...cardDeck]},
-        wastePile:  {...size, ...point, addCard: addCardToWastePile, cards: []},
-        target1:    {...size, ...point, addCard: addCardToTarget1, cards: []},
-        target2:    {...size, ...point, addCard: Fn, cards: []},
-        target3:    {...size, ...point, addCard: Fn, cards: []},
-        target4:    {...size, ...point, addCard: Fn, cards: []},
+        wastePile:  {...size, ...point, addCard: addCardsToWastePile, cards: []},
+        target1:    {...size, ...point, addCard: addCardToFn(lazyTarget1), cards: []},
+        target2:    {...size, ...point, addCard: addCardToFn(lazyTarget2), cards: []},
+        target3:    {...size, ...point, addCard: addCardToFn(lazyTarget3), cards: []},
+        target4:    {...size, ...point, addCard: addCardToFn(lazyTarget4), cards: []},
         packing1:   {...size, ...point, addCard: Fn, cards: []},
         packing2:   {...size, ...point, addCard: Fn, cards: []},
         packing3:   {...size, ...point, addCard: Fn, cards: []},

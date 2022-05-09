@@ -34,13 +34,16 @@ export function pipe<A>(data:A):Pipe<A> {
     return new Pipe(() => data)
 }
 
-export function px(val:number):string {return val + 'px'}
-
-export function top<A>(list:A[]|ReadonlyArray<A>, number:number):A[] {
-    return list.slice(-1 * number)
+export function peek<A>(fn:(data:A)=>void):(data:A)=>A {
+    return (data) => {
+        fn(data)
+        return data
+    }
 }
 
-export function _top<A>(list:A[]|ReadonlyArray<A>):Maybe<A> {
+export function px(val:number):string {return val + 'px'}
+
+export function top<A>(list:A[]|ReadonlyArray<A>):Maybe<A> {
     const [element] = list.slice(-1)
     return Maybe.from(element)
 }
@@ -62,5 +65,5 @@ export const dom = {
 }
 
 export function removeTop<A>(list:ReadonlyArray<A>|A[], number = 1):A[] {
-    return list.slice(0, list.length - (number + 1))
+    return list.slice(0, list.length - number)
 }

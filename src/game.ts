@@ -1,10 +1,10 @@
 import { Maybe } from '../maybe'
 import {
-    Card, CardSlot, conf, Dimensions, EligibleSlot, EventFn, Hand, IdFunction,
-    newRectangle, NextFn, Point, Rectangle, RenderFn, SlotFn, slotRectangle, State, UpdateSlotFn
+    Card, CardSlot, conf, Dimensions, EligibleSlot, EventFn,
+    Hand, IdFunction, LazyCardSlot, newRectangle, NextFn, Point,
+    Rectangle, RenderFn, slotRectangle, State
 } from './state'
-import { pipe, removeTop, topN, _top } from './utility'
-import { SlotDataFn, LazyCardSlot } from './state';
+import { pipe, removeTop, topN } from './utility'
 
 export class Game {
 
@@ -139,20 +139,31 @@ function eligibleSlots(state:State):State {
         return shape.overlappingArea(rect1, rect2)
     }
     const calculateOverlappingArea = (state:State, slot:CardSlot) =>
-        state.hand.fold(0)(hand => overlappingArea(hand.cards, slot))
+        state.hand.fold(0)(hand => {
+            const [first] = hand.cards
+            return first? overlappingArea(first, slot) : 0
+        })
 
     return {...state, eligibleSlots: [
         {
+            ...lazyTarget1,
             overlappingArea: calculateOverlappingArea(state, state.target1),
-            slot: (state:State) => state.target1,
-            update: updateTarget1,
-            addCard: addCardToSlot(updateTarget1, (state:State) => state.target1)
+            addCard: addCardsToSlot(lazyTarget1)
         },
         {
+            ...lazyTarget2,
             overlappingArea: calculateOverlappingArea(state, state.target2),
-            slot: (state:State) => state.target2,
-            update: updateTarget2,
-            addCard: addCardToSlot(updateTarget2, (state:State) => state.target2)
+            addCard: addCardsToSlot(lazyTarget2)
+        },
+        {
+            ...lazyTarget3,
+            overlappingArea: calculateOverlappingArea(state, state.target3),
+            addCard: addCardsToSlot(lazyTarget3)
+        },
+        {
+            ...lazyTarget4,
+            overlappingArea: calculateOverlappingArea(state, state.target4),
+            addCard: addCardsToSlot(lazyTarget4)
         }
     ]}
 }
@@ -167,9 +178,19 @@ function targetSlot(state:State):State {
             return data.overlappingArea > result.overlappingArea ? data : result
         }
         const slot = state.eligibleSlots.reduce(byArea)
-        const addCardToSlot = Maybe.from((slot.overlappingArea === 0)? null : slot.addCard)
-        const newHand:Hand = {...hand, addCardToSlot}
-        return {...state, hand: Maybe.just(newHand)}
+        if (slot.overlappingArea === 0) {
+            return hand.hoveringSlot.fold(state)(() => {
+                const addCardToSlot = Maybe.nothing<IdFunction<State>>()
+                const hoveringSlot = Maybe.nothing<LazyCardSlot>()
+                const newHand:Hand = {...hand, addCardToSlot, hoveringSlot}
+                return {...state, hand: Maybe.just(newHand)}
+            })
+        } else {
+            const addCardToSlot = Maybe.just(slot.addCard)
+            const hoveringSlot = Maybe.just(slot)
+            const newHand:Hand = {...hand, addCardToSlot, hoveringSlot}
+            return {...state, hand: Maybe.just(newHand)}
+        }
     }
 }
 
@@ -185,101 +206,33 @@ function updatePosition(val:Point) {
     }
 }
 
-export function pickUpCardFromWastePile(event:MouseEvent):EventFn {
-    return (state:State):State => {
-        const cards = [...state.wastePile.cards]
-        const card = cards.pop()
-        if (card === undefined) return state
-        const wastePile:CardSlot = {...state.wastePile, cards}
-        const newHand:Hand = {
-            startX: event.screenX,
-            startY: event.screenY,
-            cards: card,
-            highlight:false,
-            returnCard: addCardToWastePile,
-            addCardToSlot: Maybe.nothing()
-        }
-        const hand = Maybe.from(newHand)
-        return {...state, wastePile, hand}
-    }
-}
-
 export function removeTopCardsFromSlot(lazySlot:LazyCardSlot, number:number) {
     return lazySlot.update(slot => {
         return {cards: removeTop(slot.cards, number)}
     })
 }
 
-export function pickUpCardsFactory(lazySlot:LazyCardSlot) {
-    return (event:MouseEvent) => (state:State):State => {
-        const slot = lazySlot.data(state)
-        const cards = topN(slot.cards, 1)
-        return cards.fold(state)(cards => {
-            return pipe(state)
-            .pipe(updateHand(() => Maybe.just({
-                startX: event.screenX,
-                startY: event.screenY,
-                cards,
-                highlight:false,
-                returnCard: addCardToSlot(lazySlot.update, lazySlot.data),
-                addCardToSlot: Maybe.nothing()
-            })))
-            .pipe(removeTopCardsFromSlot(lazySlot, 1))
-            .run()
-        })
-    }
-}
-
-export function pickUpCardFromTarget1(event:MouseEvent):EventFn {
+export function addCardToFn(lazySlot:LazyCardSlot) {
     return (state:State):State => {
-        const cards = [...state.target1.cards]
-        const card = cards.pop()
-        if (card === undefined) return state
-        const newHand:Hand = {
-            startX: event.screenX,
-            startY: event.screenY,
-            cards: card,
-            highlight:false,
-            returnCard: addCardToSlot(updateTarget1, (state:State) => state.target1),
-            addCardToSlot: Maybe.nothing()
-        }
-        return pipe(state)
-            .pipe(updateHand(() => Maybe.just(newHand)))
-            .pipe(updateTarget1(() => ({cards: cards})))
+        const updateCardPosition = updatePosition(lazySlot.data(state))
+        return state.hand.fold(state)(hand => pipe(state)
+            .pipe(updateHand(() => Maybe.nothing()))
+            .pipe(lazySlot.update(slot => {
+                return {cards: [...slot.cards, ...hand.cards.map(updateCardPosition)]}
+            }))
             .run()
+        )
     }
 }
 
-export function addCardToTarget1(state:State):State {
-    const updateCardPosition = updatePosition(state.target1)
-    return state.hand.cata(
-        () => state,
-        hand => pipe(state)
-        .pipe(updateHand(() => Maybe.nothing()))
-        .pipe(updateTarget1(slot => ({cards: [...slot.cards, updateCardPosition(hand.cards)]})))
-        .run()
-    )
-}
-
-export function addCardToTarget2(state:State):State {
-    const updateCardPosition = updatePosition(state.target2)
-    return state.hand.cata(
-        () => state,
-        hand => pipe(state)
-        .pipe(updateHand(() => Maybe.nothing()))
-        .pipe(updateTarget2(slot => ({cards: [...slot.cards, updateCardPosition(hand.cards)]})))
-        .run()
-    )
-}
-
-export function addCardToSlot(updateSlot:UpdateSlotFn, slot:SlotFn) {
+export function addCardsToSlot(lazySlot:LazyCardSlot) {
     return function (state:State):State {
-        const updateCardPosition = updatePosition(slot(state))
-        return state.hand.cata(
-            () => state,
-            hand => pipe(state)
+        const updateCardPosition = updatePosition(lazySlot.data(state))
+        return state.hand.fold(state)(hand => pipe(state)
             .pipe(updateHand(() => Maybe.nothing()))
-            .pipe(updateSlot(slot => ({cards: [...slot.cards, updateCardPosition(hand.cards)]})))
+            .pipe(lazySlot.update(slot => {
+                return {cards: slot.cards.concat(hand.cards.map(updateCardPosition))}
+            }))
             .run()
         )
     }
@@ -291,15 +244,38 @@ export function updateHand(fn:IdFunction<Maybe<Hand>>):IdFunction<State> {
     }
 }
 
-export function updateTarget1(fn:(slot:CardSlot)=>Partial<CardSlot>):IdFunction<State> {
-    return function (state:State):State {
+export const lazyWastePile:LazyCardSlot = {
+    data: (state:State) => state.wastePile,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
+        return {...state, wastePile: {...state.wastePile, ...fn(state.wastePile)}}
+    }
+}
+
+export const lazyTarget1:LazyCardSlot = {
+    data: (state:State) => state.target1,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
         return {...state, target1: {...state.target1, ...fn(state.target1)}}
     }
 }
 
-export function updateTarget2(fn:(slot:CardSlot)=>Partial<CardSlot>):IdFunction<State> {
-    return function (state:State):State {
+export const lazyTarget2:LazyCardSlot = {
+    data: (state:State) => state.target2,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
         return {...state, target2: {...state.target2, ...fn(state.target2)}}
+    }
+}
+
+export const lazyTarget3:LazyCardSlot = {
+    data: (state:State) => state.target3,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
+        return {...state, target3: {...state.target3, ...fn(state.target3)}}
+    }
+}
+
+export const lazyTarget4:LazyCardSlot = {
+    data: (state:State) => state.target4,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
+        return {...state, target4: {...state.target4, ...fn(state.target4)}}
     }
 }
 
@@ -307,21 +283,25 @@ export function setCard(state:State):State {
     return state.hand.fold(state)(hand => {
         return hand.addCardToSlot.cata(returnCard, addCard)
         function returnCard() {return hand.returnCard(state)}
-        function addCard(fn:IdFunction<State>) {return fn(state)}
+        function addCard(fn:IdFunction<State>) {
+            return fn(state)
+        }
     })
 }
 
 export function moveCard(event:MouseEvent):EventFn {
     return (state:State):State => {
         return state.hand.fold(state)(hand => {
+            const [card] = hand.cards
+            if (card === undefined) return state
             const point:Point = {
-                x: hand.cards.x + (event.screenX - hand.startX),
-                y: hand.cards.y + (event.screenY - hand.startY),
+                x: card.x + (event.screenX - hand.startX),
+                y: card.y + (event.screenY - hand.startY),
             }
             const move = updatePosition(point)
             const newHand:Hand = {
                 ...hand,
-                cards: move(hand.cards),
+                cards: hand.cards.map(move),
                 startX: event.screenX,
                 startY: event.screenY
             }
@@ -348,12 +328,13 @@ export function nextCard(state:State):State {
     }
 }
 
-export function addCardToWastePile(state:State):State {
+export function addCardsToWastePile(state:State):State {
     return state.hand.fold(state)(hand => {
+        console.log('addCardsToWastePile')
         const pushCard = updateWastePile(data => {
             const updateCardPosition = updatePosition(state.wastePile)
-            const card = updateCardPosition(hand.cards)
-            return {cards: data.cards.concat([card])}
+            const cards = hand.cards.map(updateCardPosition)
+            return {cards: data.cards.concat(cards)}
         })
         return pipe(state)
         .pipe(pushCard)
@@ -371,9 +352,6 @@ function updateWastePile(fn:(data:CardSlot)=>Partial<CardSlot>):IdFunction<State
 
 const shape = {
     overlappingArea: function (rect1:Rectangle, rect2:Rectangle):number {
-        const area1 = Math.abs(rect1.a.x - rect1.b.x) * Math.abs(rect1.a.y - rect1.b.y)
-        const area2 = Math.abs(rect2.a.x - rect2.b.x) * Math.abs(rect2.a.y - rect2.b.y)
-
         // Length of intersecting part
         // starts from max(l1[x], l2[x]) of x-coordinate and
         // ends at min(r1[x], r2[x]) x-coordinate
@@ -385,7 +363,7 @@ const shape = {
             - Math.max(rect1.a.y, rect2.a.y))
 
         if (x_dist > 0 && y_dist > 0) {
-            return (area1 + area2 - (x_dist * y_dist))
+            return x_dist * y_dist
         } else {return 0}
     }
 }
