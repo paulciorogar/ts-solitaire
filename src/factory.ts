@@ -3,9 +3,10 @@ import { newCard } from './cardComponent'
 import { Component } from './component'
 import {
     addCardsToPackingSlot,
-    addCardsToSlot, lazyPacking1, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4, lazyWastePile, moveCard,
+    addCardsToSlot, lazyPacking1, lazyPacking2, lazyPacking3, lazyPacking4, lazyPacking5, lazyPacking6, lazyPacking7, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4, lazyWastePile, moveCard,
     nextCard, setCard
 } from './game'
+import { packingComponent } from './packingSlotComponent'
 import { pickUpCards } from './pickUpCards'
 import { Card, CardDataFn, conf, LazyCardSlot, NewEventFn, NO_OP, PickUpCardFn, State } from './state'
 import { targetSlotFactory } from './targetSlot'
@@ -199,113 +200,31 @@ export class Factory {
     }
 
     packing1():Component<any> {
-        const element = this.cardSlotElement()
-        const result = new Component(element, update(this))
-        return result
-
-        function update(factory:Factory) {
-            return (state:State, oldState:State, component:Component<any>) => {
-                const lazySlot = lazyPacking1
-                const slot = lazyPacking1.data(state)
-                if (state.hand !== oldState.hand) {
-                    state.hand.bind(hand => {
-                        return hand.hoveringSlot
-                    })
-                    .bind(lazySlot => {
-                        const data = lazySlot.data(state)
-                        if (data !== slot) {return Maybe.nothing()}
-                        element.style.borderColor = 'red'
-                        return Maybe.just(true)
-                    }).catchMap(() => element.style.borderColor = conf.cardSlotBorderColor)
-                }
-
-                if (state.packing1 === oldState.packing1) return
-                dom.updateDimensions(element, state.packing1)
-                dom.updatePosition(element, state.packing1)
-
-                if (state.packing1.cards === oldState.packing1.cards) return
-                component.removeAll()
-                state.packing1.cards.forEach((card:Card, index:number) => {
-                    const nrOfCards = state.packing1.cards.length - index
-                    const pickUpCards = factory.pickUpCardsWithOffset(lazySlot, nrOfCards)
-                    const cardData = (state:State) => Maybe.from(lazySlot.data(state).cards[index])
-                    const cardComponent = factory.card(pickUpCards, cardData)
-                    component.append(cardComponent(state))
-                })
-            }
-        }
+        return packingComponent(this, lazyPacking1)
     }
 
-    packing2():Component<'div'> {
-        const element = this.cardSlotElement()
-        const result = new Component(element, update)
-        return result
-
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            if (state.packing2 === oldState.packing2) return
-            dom.updateDimensions(element, state.packing2)
-            dom.updatePosition(element, state.packing2)
-        }
+    packing2():Component<any> {
+        return packingComponent(this, lazyPacking2)
     }
 
-    packing3():Component<'div'> {
-        const element = this.cardSlotElement()
-        const result = new Component(element, update)
-        return result
-
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            if (state.packing3 === oldState.packing3) return
-            dom.updateDimensions(element, state.packing3)
-            dom.updatePosition(element, state.packing3)
-        }
+    packing3():Component<any> {
+        return packingComponent(this, lazyPacking3)
     }
 
-    packing4():Component<'div'> {
-        const element = this.cardSlotElement()
-        const result = new Component(element, update)
-        return result
-
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            if (state.packing4 === oldState.packing4) return
-            dom.updateDimensions(element, state.packing4)
-            dom.updatePosition(element, state.packing4)
-        }
+    packing4():Component<any> {
+        return packingComponent(this, lazyPacking4)
     }
 
-    packing5():Component<'div'> {
-        const element = this.cardSlotElement()
-        const result = new Component(element, update)
-        return result
-
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            if (state.packing5 === oldState.packing5) return
-            dom.updateDimensions(element, state.packing5)
-            dom.updatePosition(element, state.packing5)
-        }
+    packing5():Component<any> {
+        return packingComponent(this, lazyPacking5)
     }
 
-    packing6():Component<'div'> {
-        const element = this.cardSlotElement()
-        const result = new Component(element, update)
-        return result
-
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            if (state.packing6 === oldState.packing6) return
-            dom.updateDimensions(element, state.packing6)
-            dom.updatePosition(element, state.packing6)
-        }
+    packing6():Component<any> {
+        return packingComponent(this, lazyPacking6)
     }
 
-    packing7():Component<'div'> {
-        const element = this.cardSlotElement()
-        const result = new Component(element, update)
-        return result
-
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            if (state.packing7 === oldState.packing7) return
-            dom.updateDimensions(element, state.packing7)
-            dom.updatePosition(element, state.packing7)
-        }
+    packing7():Component<any> {
+        return packingComponent(this, lazyPacking7)
     }
 
     card(pickUpCard:PickUpCardFn, cardData:CardDataFn) {
