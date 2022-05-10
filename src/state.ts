@@ -6,7 +6,8 @@ export const conf = Object.freeze({
     cardSlotBackgroundColor: '#201d36',
     cardSlotBorderColor: '#3d3861',
     blackSuitColor: '#4488df',
-    redSuitColor: '#df4444',
+    // redSuitColor: '#df4444',
+    redSuitColor: '#cbcbcb',
     cardRatio: {x: 63, y:88},
     cardMargin: 10,
     columns: 7,
@@ -101,8 +102,14 @@ export type State = {
 
 export function defaultTargetSlot():Maybe<CardSlot> {return Maybe.nothing()}
 
+export function flipCard(card:Card):Card {
+    return {...card, orientation: card.orientation === 'up'? 'down': 'up'}
+}
+
 export function newState():State {
     const cardDeck = newCardDeck()
+    const sixDown = cardDeck.slice(-7).map(flipCard)
+    const source = cardDeck.slice(0, cardDeck.length - 7)
     const point = {x: 0, y: 0}
     const size = {width: 0, height: 0}
     const rectangle = newRectangle(point, size)
@@ -114,7 +121,7 @@ export function newState():State {
         cardSize:   size,
         cardOffsetSize: 0,
         container:  {...size, ...point},
-        sourcePile: {...size, ...point, addCard: Fn, cards: [...cardDeck]},
+        sourcePile: {...size, ...point, addCard: Fn, cards: source},
         wastePile:  {...size, ...point, addCard: addCardsToWastePile, cards: []},
         target1:    {...size, ...point, addCard: addCardToFn(lazyTarget1), cards: []},
         target2:    {...size, ...point, addCard: addCardToFn(lazyTarget2), cards: []},
@@ -126,7 +133,7 @@ export function newState():State {
         packing4:   {...size, ...point, addCard: Fn, cards: []},
         packing5:   {...size, ...point, addCard: Fn, cards: []},
         packing6:   {...size, ...point, addCard: Fn, cards: []},
-        packing7:   {...size, ...point, addCard: Fn, cards: []},
+        packing7:   {...size, ...point, addCard: Fn, cards: sixDown},
     }
 }
 

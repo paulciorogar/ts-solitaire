@@ -3,7 +3,7 @@ import { addOffsetY } from './game'
 import { Card, CardDataFn, CardNumber, conf, PickUpCardFn, State, Suit } from './state'
 import { dom, px } from './utility'
 
-export function newCard(
+export function newFaceUpCard(
     document:Document,
     state:State,
     pickUpCard:PickUpCardFn,
@@ -103,6 +103,52 @@ export function newCard(
         suiteBottom.style.fontSize = px(Math.ceil(state.cardSize.height * 0.12))
         suiteMiddle.style.fontSize = px(Math.ceil(state.cardSize.height * 0.40))
         suiteMiddle.style.marginBottom = px(Math.ceil(state.cardSize.height * 0.15))
+    }
+}
+
+export function newFaceDownCard(
+    document:Document,
+    state:State,
+    cardData:CardDataFn,
+) {
+    const element = document.createElement('div')
+    element.style.position = 'fixed'
+    element.style.display = 'flex'
+    element.style.flexDirection = 'column'
+    element.style.boxSizing = 'border-box'
+    element.style.userSelect = 'none'
+    element.style.boxShadow = 'rgba(0, 0, 0, 0.50) 0px 0px 8px'
+    element.style.background = 'linear-gradient(300deg, rgb(31 29 50) 0%, rgb(138, 0, 21) 100%)'
+
+    renderDimensions(state)
+    cardData(state).map(renderCardData)
+
+    const component = new Component(element, update)
+    return component
+
+    function update(state:State, oldState:State, component:Component<'div'>) {
+        if (state.cardSize !== oldState.cardSize) {
+            renderDimensions(state)
+        }
+
+        const data = cardData(state)
+        const oldData = cardData(oldState)
+
+        if (data.equals(oldData)) return
+        data.map(renderCardData)
+    }
+
+    function renderCardData(data: Card) {
+        element.id = [cardNumber(data.number), data.suit].join('-')
+        element.style.color = suitColor(data.suit)
+    }
+
+    function renderDimensions(state:State) {
+        const data = cardData(state)
+        data.map(card => dom.updatePosition(element, card))
+
+        dom.updateDimensions(element, state.cardSize)
+        element.style.borderRadius = px(Math.ceil(state.cardSize.height * 0.05)) // TODO move to state
     }
 }
 

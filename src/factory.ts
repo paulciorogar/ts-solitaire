@@ -1,5 +1,5 @@
 import { Maybe } from '../maybe'
-import { newCard } from './cardComponent'
+import { newFaceDownCard, newFaceUpCard } from './cardComponent'
 import { Component } from './component'
 import {
     addCardsToPackingSlot,
@@ -107,7 +107,8 @@ export class Factory {
             }
 
             if (state.sourcePile.cards.length > 0 && card === undefined) {
-                card = this.faceDownCard()
+                const cardData = (state:State) => top(state.sourcePile.cards)
+                card = this._faceDownCard(state, cardData)
                 component.append(card)
             }
 
@@ -229,7 +230,7 @@ export class Factory {
 
     card(pickUpCard:PickUpCardFn, cardData:CardDataFn) {
         return (state:State) => {
-            return newCard(this.document, state, pickUpCard, cardData)
+            return newFaceUpCard(this.document, state, pickUpCard, cardData)
         }
     }
 
@@ -259,6 +260,10 @@ export class Factory {
         // element.style.border = '2px solid rgb(187, 0, 255)'
         const result = new Component(element, NO_OP)
         return result
+    }
+
+    _faceDownCard(state:State, cardData:CardDataFn) {
+        return newFaceDownCard(this.document, state, cardData)
     }
 
     cardSlotElement():HTMLDivElement {

@@ -184,32 +184,32 @@ function eligibleSlots(state:State):State {
         },
         {
             ...lazyPacking2,
-            overlappingArea: calculateOverlappingArea(state, state.packing2),
+            overlappingArea: calculateOverlappingAreaWithOffset(state, state.packing2),
             addCard: addCardsToPackingSlot(lazyPacking2)
         },
         {
             ...lazyPacking3,
-            overlappingArea: calculateOverlappingArea(state, state.packing3),
+            overlappingArea: calculateOverlappingAreaWithOffset(state, state.packing3),
             addCard: addCardsToPackingSlot(lazyPacking3)
         },
         {
             ...lazyPacking4,
-            overlappingArea: calculateOverlappingArea(state, state.packing4),
+            overlappingArea: calculateOverlappingAreaWithOffset(state, state.packing4),
             addCard: addCardsToPackingSlot(lazyPacking4)
         },
         {
             ...lazyPacking5,
-            overlappingArea: calculateOverlappingArea(state, state.packing5),
+            overlappingArea: calculateOverlappingAreaWithOffset(state, state.packing5),
             addCard: addCardsToPackingSlot(lazyPacking5)
         },
         {
             ...lazyPacking6,
-            overlappingArea: calculateOverlappingArea(state, state.packing6),
+            overlappingArea: calculateOverlappingAreaWithOffset(state, state.packing6),
             addCard: addCardsToPackingSlot(lazyPacking6)
         },
         {
             ...lazyPacking7,
-            overlappingArea: calculateOverlappingArea(state, state.packing7),
+            overlappingArea: calculateOverlappingAreaWithOffset(state, state.packing7),
             addCard: addCardsToPackingSlot(lazyPacking7)
         }
     ]}
