@@ -27,18 +27,17 @@ export function newCard(
     element.style.cursor = 'grab'
     element.style.userSelect = 'none'
     element.style.boxShadow = 'rgba(0, 0, 0, 0.50) 0px 0px 8px'
-
-    numberTop.style.whiteSpace = 'pre'
+    element.style.whiteSpace = 'pre'
 
     numberBottom.style.transform = 'rotate(180deg)'
     numberBottom.style.display = 'inline-block'
-    numberBottom.style.whiteSpace = 'pre'
 
     suiteBottom.style.transform = 'rotate(180deg)'
     suiteBottom.style.display = 'inline-block'
 
 
     topRow.style.display = 'flex'
+    topRow.style.alignItems = 'center'
 
     middleRow.style.flex = '1'
     middleRow.style.display = 'flex'
@@ -48,16 +47,17 @@ export function newCard(
 
     bottomRow.style.display = 'flex'
     bottomRow.style.justifyContent = 'end'
+    bottomRow.style.alignItems = 'center'
 
-    topRow.appendChild(numberTop)
     topRow.appendChild(suiteTop)
+    topRow.appendChild(numberTop)
     element.appendChild(topRow)
 
     middleRow.appendChild(suiteMiddle)
     element.appendChild(middleRow)
 
-    bottomRow.appendChild(suiteBottom)
     bottomRow.appendChild(numberBottom)
+    bottomRow.appendChild(suiteBottom)
     element.appendChild(bottomRow)
 
     renderDimensions(state)
@@ -85,8 +85,8 @@ export function newCard(
         element.style.color = suitColor(data.suit)
         numberTop.textContent = cardNumber(data.number)
         numberBottom.textContent = cardNumber(data.number)
-        suiteTop.textContent = data.suit
-        suiteBottom.textContent = data.suit
+        suiteTop.textContent = ' ' + data.suit
+        suiteBottom.textContent = ' ' + data.suit
         suiteMiddle.textContent = data.suit
     }
 
