@@ -139,11 +139,13 @@ function eligibleSlots(state:State):State {
         const rect2 = slotRectangle(slot)
         return shape.overlappingArea(rect1, rect2)
     }
+
     const calculateOverlappingArea = (state:State, slot:CardSlot) =>
         state.hand.fold(0)(hand => {
             const [first] = hand.cards
             return first? overlappingArea(first, slot) : 0
         })
+
     const calculateOverlappingAreaWithOffset = (state:State, slot:CardSlot) => {
         const {cardOffsetSize} = state
         const height = state.cardSize.height + slot.cards.length * cardOffsetSize
@@ -414,7 +416,12 @@ export function moveCard(event:MouseEvent):EventFn {
                 x: card.x + (event.screenX - hand.startX),
                 y: card.y + (event.screenY - hand.startY),
             }
-            const move = updatePosition(point)
+            const updateCardPosition = (point:Point) => ((card:Card, index:number) => {
+                const offset = addOffsetY(index * state.cardOffsetSize)
+                const update = updatePosition(offset(point))
+                return update(card)
+            })
+            const move = updateCardPosition(point)
             const newHand:Hand = {
                 ...hand,
                 cards: hand.cards.map(move),

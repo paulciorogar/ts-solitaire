@@ -75,5 +75,6 @@
     "typescript.tsserver.watchOptions": {
         "fallbackPolling": "fixedPollingInterval"
     },
-    "typescript.updateImportsOnFileMove.enabled": "always"
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "editor.guides.bracketPairs": true
 }

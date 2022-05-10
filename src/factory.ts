@@ -84,7 +84,7 @@ export class Factory {
                 component.removeAll()
                 cards.forEach((_, index) => {
                     const cardData = (state:State) => state.hand.bind(hand => Maybe.from(hand.cards[index]))
-                    const cardComponent = factory.card(NO_OP, cardData, index)
+                    const cardComponent = factory.card(NO_OP, cardData)
                     component.append(cardComponent(state))
                 })
             }
@@ -308,9 +308,9 @@ export class Factory {
         }
     }
 
-    card(pickUpCard:PickUpCardFn, cardData:CardDataFn, offset = 0) {
+    card(pickUpCard:PickUpCardFn, cardData:CardDataFn) {
         return (state:State) => {
-            return newCard(this.document, state, pickUpCard, cardData, offset)
+            return newCard(this.document, state, pickUpCard, cardData)
         }
     }
 

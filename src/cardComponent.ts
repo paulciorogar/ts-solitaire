@@ -8,7 +8,6 @@ export function newCard(
     state:State,
     pickUpCard:PickUpCardFn,
     cardData:CardDataFn,
-    offsetStep:number
 ) {
     const element = document.createElement('div')
     const topRow = document.createElement('div')
@@ -93,8 +92,7 @@ export function newCard(
 
     function renderDimensions(state:State) {
         const data = cardData(state)
-        const offset = addOffsetY(offsetStep * state.cardOffsetSize)
-        data.map(card => dom.updatePosition(element, offset(card)))
+        data.map(card => dom.updatePosition(element, card))
 
 
         dom.updateDimensions(element, state.cardSize)
