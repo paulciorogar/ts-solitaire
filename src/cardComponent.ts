@@ -93,7 +93,7 @@ export function newCard(
 
     function renderDimensions(state:State) {
         const data = cardData(state)
-        const offset = addOffsetY(offsetStep * Math.ceil(state.cardSize.height * 0.15))
+        const offset = addOffsetY(offsetStep * state.cardOffsetSize)
         data.map(card => dom.updatePosition(element, offset(card)))
 
 

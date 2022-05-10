@@ -91,7 +91,8 @@ function cardSize(state:State, oldState:State):State {
         width: cardWidth,
         height: Math.floor((cardWidth * cardRatio.y) / cardRatio.x)
     }
-    return {...state, cardSize: card}
+    const cardOffsetSize = Math.ceil(card.height * conf.cardStackOffset)
+    return {...state, cardSize: card, cardOffsetSize}
 }
 
 function cardSlotsPositions(state:State, oldState:State):State {
@@ -143,6 +144,15 @@ function eligibleSlots(state:State):State {
             const [first] = hand.cards
             return first? overlappingArea(first, slot) : 0
         })
+    const calculateOverlappingAreaWithOffset = (state:State, slot:CardSlot) => {
+        const {cardOffsetSize} = state
+        const height = state.cardSize.height + slot.cards.length * cardOffsetSize
+        const adjustSize = updateSize({width: state.cardSize.width, height})
+        return state.hand.fold(0)(hand => {
+            const [first] = hand.cards
+            return first? overlappingArea(first, adjustSize(slot)) : 0
+        })
+    }
 
     return {...state, eligibleSlots: [
         {
@@ -167,7 +177,7 @@ function eligibleSlots(state:State):State {
         },
         {
             ...lazyPacking1,
-            overlappingArea: calculateOverlappingArea(state, state.packing1),
+            overlappingArea: calculateOverlappingAreaWithOffset(state, state.packing1),
             addCard: addCardsToSlot(lazyPacking1)
         },
         {

@@ -12,6 +12,7 @@ export const conf = Object.freeze({
     columns: 7,
     containerMargin: 40,
     aspectRation: {x: 16, y: 10},
+    cardStackOffset: 0.15,
 })
 
 const cardNumbers = [1,2,3,4,5,6,7,8,9,10,11,12,13] as const
@@ -79,6 +80,7 @@ export type State = {
     readonly body: Dimensions
     readonly container: Dimensions & Point
     readonly cardSize: Dimensions
+    readonly cardOffsetSize: number
     readonly sourcePile:CardSlot
     readonly wastePile:CardSlot
     readonly target1:CardSlot
@@ -103,11 +105,12 @@ export function newState():State {
     const rectangle = newRectangle(point, size)
     return {
         eligibleSlots: [],
-        hand: Maybe.nothing(),
-        eventQ: [],
+        hand:       Maybe.nothing(),
+        eventQ:     [],
         body:       size,
-        container:  {...size, ...point},
         cardSize:   size,
+        cardOffsetSize: 0,
+        container:  {...size, ...point},
         sourcePile: {...size, ...point, addCard: Fn, cards: [...cardDeck]},
         wastePile:  {...size, ...point, addCard: addCardsToWastePile, cards: []},
         target1:    {...size, ...point, addCard: addCardToFn(lazyTarget1), cards: []},
