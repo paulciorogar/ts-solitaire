@@ -55,9 +55,6 @@
     "typescript.preferences.importModuleSpecifierEnding": "minimal",
     "editor.foldingHighlight": false,
     "editor.occurrencesHighlight": false,
-    "editor.bracketPairColorization.enabled": false,
-
-
     "editor.fontFamily": "Consolas",
     "editor.renderWhitespace": "none",
     "editor.autoClosingDelete": "always",
