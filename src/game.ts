@@ -164,6 +164,41 @@ function eligibleSlots(state:State):State {
             ...lazyTarget4,
             overlappingArea: calculateOverlappingArea(state, state.target4),
             addCard: addCardsToSlot(lazyTarget4)
+        },
+        {
+            ...lazyPacking1,
+            overlappingArea: calculateOverlappingArea(state, state.packing1),
+            addCard: addCardsToSlot(lazyPacking1)
+        },
+        {
+            ...lazyPacking2,
+            overlappingArea: calculateOverlappingArea(state, state.packing2),
+            addCard: addCardsToSlot(lazyPacking2)
+        },
+        {
+            ...lazyPacking3,
+            overlappingArea: calculateOverlappingArea(state, state.packing3),
+            addCard: addCardsToSlot(lazyPacking3)
+        },
+        {
+            ...lazyPacking4,
+            overlappingArea: calculateOverlappingArea(state, state.packing4),
+            addCard: addCardsToSlot(lazyPacking4)
+        },
+        {
+            ...lazyPacking5,
+            overlappingArea: calculateOverlappingArea(state, state.packing5),
+            addCard: addCardsToSlot(lazyPacking5)
+        },
+        {
+            ...lazyPacking6,
+            overlappingArea: calculateOverlappingArea(state, state.packing6),
+            addCard: addCardsToSlot(lazyPacking6)
+        },
+        {
+            ...lazyPacking7,
+            overlappingArea: calculateOverlappingArea(state, state.packing7),
+            addCard: addCardsToSlot(lazyPacking7)
         }
     ]}
 }
@@ -200,10 +235,14 @@ function updateSize(val:Dimensions) {
     }
 }
 
-function updatePosition(val:Point) {
+export function updatePosition(val:Point) {
     return function<A extends Point>(data:A):A {
         return {...data, x: val.x, y: val.y}
     }
+}
+
+export function addOffsetY(offset:number) {
+    return <A extends Point>(data:A):A => ({...data, y: data.y + offset})
 }
 
 export function removeTopCardsFromSlot(lazySlot:LazyCardSlot, number:number) {
@@ -276,6 +315,55 @@ export const lazyTarget4:LazyCardSlot = {
     data: (state:State) => state.target4,
     update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
         return {...state, target4: {...state.target4, ...fn(state.target4)}}
+    }
+}
+
+export const lazyPacking1:LazyCardSlot = {
+    data: (state:State) => state.packing1,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
+        return {...state, packing1: {...state.packing1, ...fn(state.packing1)}}
+    }
+}
+
+export const lazyPacking2:LazyCardSlot = {
+    data: (state:State) => state.packing2,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
+        return {...state, packing2: {...state.packing2, ...fn(state.packing2)}}
+    }
+}
+
+export const lazyPacking3:LazyCardSlot = {
+    data: (state:State) => state.packing3,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
+        return {...state, packing3: {...state.packing3, ...fn(state.packing3)}}
+    }
+}
+
+export const lazyPacking4:LazyCardSlot = {
+    data: (state:State) => state.packing4,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
+        return {...state, packing4: {...state.packing4, ...fn(state.packing4)}}
+    }
+}
+
+export const lazyPacking5:LazyCardSlot = {
+    data: (state:State) => state.packing5,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
+        return {...state, packing5: {...state.packing5, ...fn(state.packing5)}}
+    }
+}
+
+export const lazyPacking6:LazyCardSlot = {
+    data: (state:State) => state.packing6,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
+        return {...state, packing6: {...state.packing6, ...fn(state.packing6)}}
+    }
+}
+
+export const lazyPacking7:LazyCardSlot = {
+    data: (state:State) => state.packing7,
+    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
+        return {...state, packing7: {...state.packing7, ...fn(state.packing7)}}
     }
 }
 

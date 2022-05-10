@@ -2,7 +2,7 @@ import { Maybe } from '../maybe'
 import { newCard } from './cardComponent'
 import { Component } from './component'
 import {
-    addCardsToSlot, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4, lazyWastePile, moveCard,
+    addCardsToSlot, lazyPacking1, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4, lazyWastePile, moveCard,
     nextCard, removeTopCardsFromSlot, setCard, updateHand
 } from './game'
 import { Card, CardDataFn, conf, EventFn, Hand, LazyCardSlot, NO_OP, PickUpCardFn, State } from './state'
@@ -201,15 +201,40 @@ export class Factory {
         })
     }
 
-    packing1():Component<'div'> {
+    packing1():Component<any> {
         const element = this.cardSlotElement()
-        const result = new Component(element, update)
+        const result = new Component(element, update(this))
         return result
 
-        function update(state:State, oldState:State, component:Component<'div'>) {
-            if (state.packing1 === oldState.packing1) return
-            dom.updateDimensions(element, state.packing1)
-            dom.updatePosition(element, state.packing1)
+        function update(factory:Factory) {
+            return (state:State, oldState:State, component:Component<any>) => {
+                const lazySlot = lazyPacking1
+                const slot = lazyPacking1.data(state)
+                if (state.hand !== oldState.hand) {
+                    state.hand.bind(hand => {
+                        return hand.hoveringSlot
+                    })
+                    .bind(lazySlot => {
+                        const data = lazySlot.data(state)
+                        if (data !== slot) {return Maybe.nothing()}
+                        element.style.borderColor = 'red'
+                        return Maybe.just(true)
+                    }).catchMap(() => element.style.borderColor = conf.cardSlotBorderColor)
+                }
+
+                if (state.packing1 === oldState.packing1) return
+                dom.updateDimensions(element, state.packing1)
+                dom.updatePosition(element, state.packing1)
+
+                if (state.packing1.cards === oldState.packing1.cards) return
+                component.removeAll()
+                state.packing1.cards.forEach((card:Card, index:number) => {
+                    const pickUpCard = factory.pickUpCards(lazySlot)
+                    const cardData = (state:State) => Maybe.from(lazySlot.data(state).cards[index])
+                    const cardComponent = factory.card(pickUpCard, cardData, index)
+                    component.append(cardComponent(state))
+                })
+            }
         }
     }
 
@@ -285,9 +310,9 @@ export class Factory {
         }
     }
 
-    card(pickUpCard:PickUpCardFn, cardData:CardDataFn) {
+    card(pickUpCard:PickUpCardFn, cardData:CardDataFn, offset = 0) {
         return (state:State) => {
-            return newCard(this.document, state, pickUpCard, cardData)
+            return newCard(this.document, state, pickUpCard, cardData, offset)
         }
     }
 

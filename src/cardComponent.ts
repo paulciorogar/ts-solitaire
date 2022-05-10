@@ -1,12 +1,14 @@
 import { Component } from './component'
-import { Card, CardDataFn, CardNumber, conf, MoveCardFn, PickUpCardFn, State, Suit } from './state'
+import { addOffsetY, updatePosition } from './game'
+import { Card, CardDataFn, CardNumber, conf, MoveCardFn, PickUpCardFn, Point, State, Suit } from './state'
 import { px, dom } from './utility'
 
 export function newCard(
     document:Document,
     state:State,
     pickUpCard:PickUpCardFn,
-    cardData:CardDataFn
+    cardData:CardDataFn,
+    offsetStep:number
 ) {
     const element = document.createElement('div')
     const topRow = document.createElement('div')
@@ -80,7 +82,6 @@ export function newCard(
     }
 
     function renderCardData(data: Card) {
-        dom.updatePosition(element, data)
         element.id = [cardNumber(data.number), data.suit].join('-')
         element.style.color = suitColor(data.suit)
         numberTop.textContent = cardNumber(data.number)
@@ -91,6 +92,11 @@ export function newCard(
     }
 
     function renderDimensions(state:State) {
+        const data = cardData(state)
+        const offset = addOffsetY(offsetStep * Math.ceil(state.cardSize.height * 0.15))
+        data.map(card => dom.updatePosition(element, offset(card)))
+
+
         dom.updateDimensions(element, state.cardSize)
         element.style.borderRadius = px(Math.ceil(state.cardSize.height * 0.05)) // TODO move to state
         numberTop.style.fontSize = px(Math.ceil(state.cardSize.height * 0.1))

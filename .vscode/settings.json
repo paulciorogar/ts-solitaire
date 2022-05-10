@@ -66,7 +66,7 @@
     "editor.scrollBeyondLastColumn": 10,
     "editor.unicodeHighlight.includeComments": true,
     "editor.unicodeHighlight.nonBasicASCII": true,
-    "editor.cursorSurroundingLines": 5,
+    "editor.cursorSurroundingLines": 2,
     "diffEditor.renderSideBySide": false,
     "files.trimTrailingWhitespace": true,
     "terminal.integrated.defaultProfile.windows": "Git Bash",
