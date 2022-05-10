@@ -47,7 +47,7 @@
     "javascript.updateImportsOnFileMove.enabled": "always",
     "editor.cursorBlinking": "solid",
     "window.title": "${dirty}${activeEditorLong}${separator}${rootName}${separator}${appName}",
-    "window.zoomLevel": 3,
+    "window.zoomLevel": 2,
     "terminal.integrated.gpuAcceleration": "off",
     "colorHelper.disableGpu": 1,
     "javascript.format.semicolons": "remove",
@@ -59,7 +59,7 @@
 
 
     "editor.fontFamily": "Consolas",
-    "editor.renderWhitespace": "all",
+    "editor.renderWhitespace": "none",
     "editor.autoClosingDelete": "always",
     "editor.detectIndentation": false,
     "editor.lineNumbers": "relative",
