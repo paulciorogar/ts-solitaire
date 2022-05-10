@@ -52,8 +52,8 @@ class Nothing<A> {
         return !this.isValue
     }
 
-    bind():Nothing<A> {
-        return this
+    bind<B>(bindFn:(val:A)=>Maybe<B>) {
+        return new Nothing<B>()
     }
 
     map<B>():Maybe<B> {

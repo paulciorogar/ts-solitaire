@@ -1,7 +1,7 @@
 import { Component } from './component'
-import { addOffsetY, updatePosition } from './game'
-import { Card, CardDataFn, CardNumber, conf, MoveCardFn, PickUpCardFn, Point, State, Suit } from './state'
-import { px, dom } from './utility'
+import { addOffsetY } from './game'
+import { Card, CardDataFn, CardNumber, conf, PickUpCardFn, State, Suit } from './state'
+import { dom, px } from './utility'
 
 export function newCard(
     document:Document,

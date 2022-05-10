@@ -24,6 +24,8 @@ export type IdFunction<A> = (data:A) => A
 export type NextFn = IdFunction<State>
 export type RenderFn = (state:State, oldState:State) => void
 export type EventFn = IdFunction<State>
+export type NewEventFn = (fn:EventFn)=>void
+export type AddCardsToSlotFn = (lazySlot:LazyCardSlot) => IdFunction<State>
 export type PickUpCardFn = (event:MouseEvent) => void
 export type CardDataFn = (state:State) => Maybe<Card>
 export type SlotDataFn = (state:State) => CardSlot

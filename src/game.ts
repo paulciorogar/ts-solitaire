@@ -4,7 +4,7 @@ import {
     Hand, IdFunction, LazyCardSlot, newRectangle, NextFn, Point,
     Rectangle, RenderFn, slotRectangle, State
 } from './state'
-import { pipe, removeTop, topN } from './utility'
+import { peek, pipe, removeTop, topN } from './utility'
 
 export class Game {
 
@@ -178,7 +178,7 @@ function eligibleSlots(state:State):State {
         {
             ...lazyPacking1,
             overlappingArea: calculateOverlappingAreaWithOffset(state, state.packing1),
-            addCard: addCardsToSlot(lazyPacking1)
+            addCard: addCardsToPackingSlot(lazyPacking1)
         },
         {
             ...lazyPacking2,
@@ -281,6 +281,24 @@ export function addCardsToSlot(lazySlot:LazyCardSlot) {
             .pipe(updateHand(() => Maybe.nothing()))
             .pipe(lazySlot.update(slot => {
                 return {cards: slot.cards.concat(hand.cards.map(updateCardPosition))}
+            }))
+            .run()
+        )
+    }
+}
+
+export function addCardsToPackingSlot(lazySlot:LazyCardSlot) {
+    return function (state:State):State {
+        const updateCardPosition = (slot:CardSlot) => ((card:Card, index:number) => {
+            const offset = addOffsetY((slot.cards.length + index) * state.cardOffsetSize)
+            const update = updatePosition(offset(slot))
+            return update(card)
+        })
+        return state.hand.fold(state)(hand => pipe(state)
+            .pipe(updateHand(() => Maybe.nothing()))
+            .pipe(lazySlot.update(slot => {
+                const update = updateCardPosition(slot)
+                return {cards: slot.cards.concat(hand.cards.map(update))}
             }))
             .run()
         )

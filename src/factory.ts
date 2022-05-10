@@ -2,16 +2,18 @@ import { Maybe } from '../maybe'
 import { newCard } from './cardComponent'
 import { Component } from './component'
 import {
+    addCardsToPackingSlot,
     addCardsToSlot, lazyPacking1, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4, lazyWastePile, moveCard,
-    nextCard, removeTopCardsFromSlot, setCard, updateHand
+    nextCard, setCard
 } from './game'
-import { Card, CardDataFn, conf, EventFn, Hand, LazyCardSlot, NO_OP, PickUpCardFn, State } from './state'
+import { pickUpCards } from './pickUpCards'
+import { Card, CardDataFn, conf, LazyCardSlot, NewEventFn, NO_OP, PickUpCardFn, State } from './state'
 import { targetSlotFactory } from './targetSlot'
-import { dom, peek, pipe, px, throttle, top, topN } from './utility'
+import { dom, px, throttle, top } from './utility'
 
 export class Factory {
 
-    constructor(private document:Document, readonly newEvent:(fn:EventFn)=>void) {}
+    constructor(private document:Document, readonly newEvent:NewEventFn) {}
 
     mainContainer(state:State):Component<any> {
         const factory = this
@@ -72,7 +74,6 @@ export class Factory {
     handComponent(state:State) {
         const element = this.document.createElement('div')
         const component = new Component(element, update(this))
-        component.append(this.card(NO_OP, fetchData)(state))
         return component
 
         function update(factory:Factory) {
@@ -81,16 +82,12 @@ export class Factory {
                 const oldCards = oldState.hand.fold([])(hand => hand.cards)
                 if (cards === oldCards) return
                 component.removeAll()
-                component.append(factory.card(NO_OP, fetchData)(state))
+                cards.forEach((_, index) => {
+                    const cardData = (state:State) => state.hand.bind(hand => Maybe.from(hand.cards[index]))
+                    const cardComponent = factory.card(NO_OP, cardData, index)
+                    component.append(cardComponent(state))
+                })
             }
-        }
-
-        function fetchData(state:State):Maybe<Card> {
-            const nothing = Maybe.nothing<Card>()
-            return state.hand.fold(nothing)(hand => {
-                const [first] = hand.cards
-                return Maybe.just(first)
-            })
         }
     }
 
@@ -229,9 +226,10 @@ export class Factory {
                 if (state.packing1.cards === oldState.packing1.cards) return
                 component.removeAll()
                 state.packing1.cards.forEach((card:Card, index:number) => {
-                    const pickUpCard = factory.pickUpCards(lazySlot)
+                    const nrOfCards = state.packing1.cards.length - index
+                    const pickUpCards = factory.pickUpCardsWithOffset(lazySlot, nrOfCards)
                     const cardData = (state:State) => Maybe.from(lazySlot.data(state).cards[index])
-                    const cardComponent = factory.card(pickUpCard, cardData, index)
+                    const cardComponent = factory.card(pickUpCards, cardData)
                     component.append(cardComponent(state))
                 })
             }
@@ -354,23 +352,11 @@ export class Factory {
         return element
     }
 
-    pickUpCards(lazySlot:LazyCardSlot) {
-        return (event:MouseEvent) => this.newEvent((state:State):State => {
-            const slot = lazySlot.data(state)
-            const cards = topN(slot.cards, 1)
-            return cards.fold(state)(cards => {
-                return pipe(state)
-                .pipe(updateHand(() => Maybe.just({
-                    startX: event.screenX,
-                    startY: event.screenY,
-                    cards,
-                    hoveringSlot: Maybe.nothing(),
-                    returnCard: addCardsToSlot(lazySlot),
-                    addCardToSlot: Maybe.nothing()
-                })))
-                .pipe(removeTopCardsFromSlot(lazySlot, 1))
-                .run()
-            })
-        })
+    pickUpCards(lazySlot:LazyCardSlot, numberOfCards = 1) {
+        return pickUpCards(this.newEvent, addCardsToSlot, lazySlot, numberOfCards)
+    }
+
+    pickUpCardsWithOffset(lazySlot:LazyCardSlot, numberOfCards = 1) {
+        return pickUpCards(this.newEvent, addCardsToPackingSlot, lazySlot, numberOfCards)
     }
 }
