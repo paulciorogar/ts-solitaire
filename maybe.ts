@@ -17,7 +17,7 @@ class Some<A> {
         return bindFn(this.val)
     }
 
-    map<B>(fn:(value:A)=>NonNullable<B> ):Maybe<B> {
+    map<B>(fn:(value:A)=>B ):Maybe<B> {
         return Some.from(fn(this.val))
     }
 

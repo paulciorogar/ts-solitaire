@@ -2,7 +2,7 @@ import { Maybe } from '../maybe'
 import {
     Card, CardSlot, conf, Dimensions, EligibleSlot, EventFn,
     Hand, IdFunction, LazyCardSlot, newRectangle, NextFn, Point,
-    Rectangle, RenderFn, slotRectangle, State, UpdateCardsPosition
+    Rectangle, RenderFn, slotRectangle, State, Suit, UpdateCardsPosition
 } from './state'
 import { pipe, removeTop, top } from './utility'
 
@@ -56,7 +56,7 @@ export function next(state:State):State {
         .map(cardSize)
         .map(cardSlotsPositions)
         .map(flipSlotCards)
-        .map(eligibleSlots)
+        .map(_eligibleSlots)
         .map(targetSlot)
         .current
 }
@@ -243,26 +243,131 @@ function eligibleSlots(state:State):State {
     ]}
 }
 
+function _eligibleSlots(state:State, oldState:State):State {
+    if (state.hand === oldState.hand) return state
+    const eligibleSlots:EligibleSlot[] = []
+    const {just} = Maybe
+    return state.hand.map(hand => hand.cards[0])
+    .bind(cardInHand => {
+        console.log('_eligibleSlots')
+        eligibleTargetSlot(state, lazyTarget1, cardInHand).map(slot => eligibleSlots.push(slot))
+        eligibleTargetSlot(state, lazyTarget2, cardInHand).map(slot => eligibleSlots.push(slot))
+        eligibleTargetSlot(state, lazyTarget3, cardInHand).map(slot => eligibleSlots.push(slot))
+        eligibleTargetSlot(state, lazyTarget4, cardInHand).map(slot => eligibleSlots.push(slot))
+        eligiblePackingSlot(state, lazyPacking1, cardInHand).map(slot => eligibleSlots.push(slot))
+        eligiblePackingSlot(state, lazyPacking2, cardInHand).map(slot => eligibleSlots.push(slot))
+        eligiblePackingSlot(state, lazyPacking3, cardInHand).map(slot => eligibleSlots.push(slot))
+        eligiblePackingSlot(state, lazyPacking4, cardInHand).map(slot => eligibleSlots.push(slot))
+        eligiblePackingSlot(state, lazyPacking5, cardInHand).map(slot => eligibleSlots.push(slot))
+        eligiblePackingSlot(state, lazyPacking6, cardInHand).map(slot => eligibleSlots.push(slot))
+        eligiblePackingSlot(state, lazyPacking7, cardInHand).map(slot => eligibleSlots.push(slot))
+        return just(eligibleSlots)
+    })
+    .fold(state)(slots => ({...state, eligibleSlots: slots}))
+}
+
+function eligibleTargetSlot(state:State, lazySlot:LazyCardSlot, card:Card):Maybe<EligibleSlot> {
+    const slot = lazySlot.data(state)
+    const topCard = top(slot.cards)
+    return topCard.cata(none, some)
+
+    function none():Maybe<EligibleSlot> {
+        if (card.number === 1) return Maybe.just(newEligibleSlot())
+        return Maybe.nothing()
+    }
+
+    function some(topCard:Card):Maybe<EligibleSlot> {
+        if (topCard.suit !== card.suit) return Maybe.nothing()
+        if (topCard.number + 1 !== card.number) return Maybe.nothing()
+        return Maybe.just(newEligibleSlot())
+    }
+
+    function newEligibleSlot():EligibleSlot {
+        return {
+            ...lazySlot,
+            overlappingArea: overlappingArea(card, slot, state.cardSize),
+            addCard: addCardsToSlot(lazySlot)
+        }
+    }
+}
+
+function eligiblePackingSlot(state:State, lazySlot:LazyCardSlot, cardInHand:Card):Maybe<EligibleSlot> {
+    const slot = lazySlot.data(state)
+    const card = top(slot.cards)
+    return card.cata(none, some)
+
+    function none():Maybe<EligibleSlot> {
+        if (cardInHand.number === 13) return Maybe.just(newEligibleSlot())
+        return Maybe.nothing()
+    }
+
+    function some(card:Card):Maybe<EligibleSlot> {
+        if (sameColor(card.suit, cardInHand.suit)) return Maybe.nothing()
+        if (card.number - 1 !== cardInHand.number) return Maybe.nothing()
+        return Maybe.just(newEligibleSlot())
+    }
+
+    function newEligibleSlot():EligibleSlot {
+        return {
+            ...lazySlot,
+            overlappingArea: overlappingAreaWithOffset(cardInHand, slot, state),
+            addCard: addCardsToPackingSlot(lazySlot)
+        }
+    }
+}
+
+function overlappingArea(card:Card, slot:CardSlot, cardSize:Dimensions):number {
+    const rect1 = newRectangle(card, cardSize)
+    const rect2 = slotRectangle(slot)
+    return shape.overlappingArea(rect1, rect2)
+}
+
+function overlappingAreaWithOffset(card:Card, slot:CardSlot, state:State):number {
+    const {cardOffsetSize} = state
+    const height = state.cardSize.height + slot.cards.length * cardOffsetSize
+    const adjustSize = updateSize({width: state.cardSize.width, height})
+    return overlappingArea(card, adjustSize(slot), state.cardSize)
+}
+
+function sameColor(suit1:Suit, suit2:Suit):boolean {
+    switch(suit1) {
+        case '♠': return suit1 === suit2 || suit2 === '♣'
+        case '♣': return suit1 === suit2 || suit2 === '♠'
+        case '♥': return suit1 === suit2 || suit2 === '♦'
+        case '♦': return suit1 === suit2 || suit2 === '♥'
+    }
+}
+
+
 function targetSlot(state:State):State {
     return state.hand.cata(clear, findTargetSlot)
 
     function clear() { return state }
 
     function findTargetSlot(hand:Hand):State {
-        const byArea = (result:EligibleSlot, data:EligibleSlot) => {
-            return data.overlappingArea > result.overlappingArea ? data : result
+        const {just, nothing} = Maybe
+        const byArea = (result:Maybe<EligibleSlot>, data:EligibleSlot):Maybe<EligibleSlot> => {
+            return result.cata(
+                () => data.overlappingArea > 0? just(data) : result,
+                slot => data.overlappingArea > 0
+                && data.overlappingArea > slot.overlappingArea ? just(data) : result
+            )
         }
-        const slot = state.eligibleSlots.reduce(byArea)
-        if (slot.overlappingArea === 0) {
+        const slot = state.eligibleSlots.reduce(byArea, nothing())
+        return slot.cata(clearHovering, addHovering)
+
+        function clearHovering() {
             return hand.hoveringSlot.fold(state)(() => {
                 const addCardToSlot = Maybe.nothing<IdFunction<State>>()
                 const hoveringSlot = Maybe.nothing<LazyCardSlot>()
                 const newHand:Hand = {...hand, addCardToSlot, hoveringSlot}
                 return {...state, hand: Maybe.just(newHand)}
             })
-        } else {
-            const addCardToSlot = Maybe.just(slot.addCard)
-            const hoveringSlot = Maybe.just(slot)
+        }
+
+        function addHovering(eligibleSlot:EligibleSlot) {
+            const addCardToSlot = Maybe.just(eligibleSlot.addCard)
+            const hoveringSlot = Maybe.just(eligibleSlot)
             const newHand:Hand = {...hand, addCardToSlot, hoveringSlot}
             return {...state, hand: Maybe.just(newHand)}
         }
