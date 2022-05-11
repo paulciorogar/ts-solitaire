@@ -32,7 +32,7 @@ export type PickUpCardFn = (event:MouseEvent) => void
 export type CardDataFn = (state:State) => Maybe<Card>
 export type SlotDataFn = (state:State) => CardSlot
 export type MoveCardFn = (event:MouseEvent)=>void
-export type UpdateSlotFn = (fn:(slot:CardSlot)=>Partial<CardSlot>|void)=>IdFunction<State>
+export type UpdateSlotFn = (fn:(slot:CardSlot, state:State)=>Partial<CardSlot>|void)=>IdFunction<State>
 export type UpdateCardsPosition = (slot:CardSlot) => (card:Card, index:number) => Card
 export type SlotFn = (state:State)=>CardSlot
 

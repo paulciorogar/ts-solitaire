@@ -349,10 +349,19 @@ export function updateHand(fn:IdFunction<Maybe<Hand>>):IdFunction<State> {
     }
 }
 
+export const lazySourcePile:LazyCardSlot = {
+    data: (state) => state.sourcePile,
+    update: (fn) => (state) => {
+        const newData = fn(state.sourcePile, state)
+        if (newData) {return {...state, sourcePile: {...state.sourcePile, ...newData}}}
+        return state
+    }
+}
+
 export const lazyWastePile:LazyCardSlot = {
     data: (state) => state.wastePile,
     update: (fn) => (state) => {
-        const newData = fn(state.wastePile)
+        const newData = fn(state.wastePile, state)
         if (newData) {return {...state, wastePile: {...state.wastePile, ...newData}}}
         return state
     }
@@ -361,7 +370,7 @@ export const lazyWastePile:LazyCardSlot = {
 export const lazyTarget1:LazyCardSlot = {
     data: (state) => state.target1,
     update: (fn) => (state) => {
-        const newData = fn(state.target1)
+        const newData = fn(state.target1, state)
         if (newData) {return {...state, target1: {...state.target1, ...newData}}}
         return state
     }
@@ -370,7 +379,7 @@ export const lazyTarget1:LazyCardSlot = {
 export const lazyTarget2:LazyCardSlot = {
     data: (state) => state.target2,
     update: (fn) => (state) => {
-        const newData = fn(state.target2)
+        const newData = fn(state.target2, state)
         if (newData) {return {...state, target2: {...state.target2, ...newData}}}
         return state
     }
@@ -379,7 +388,7 @@ export const lazyTarget2:LazyCardSlot = {
 export const lazyTarget3:LazyCardSlot = {
     data: (state) => state.target3,
     update: (fn) => (state) => {
-        const newData = fn(state.target3)
+        const newData = fn(state.target3, state)
         if (newData) {return {...state, target3: {...state.target3, ...newData}}}
         return state
     }
@@ -388,7 +397,7 @@ export const lazyTarget3:LazyCardSlot = {
 export const lazyTarget4:LazyCardSlot = {
     data: (state) => state.target4,
     update: (fn) => (state) => {
-        const newData = fn(state.target4)
+        const newData = fn(state.target4, state)
         if (newData) {return {...state, target4: {...state.target4, ...newData}}}
         return state
     }
@@ -397,7 +406,7 @@ export const lazyTarget4:LazyCardSlot = {
 export const lazyPacking1:LazyCardSlot = {
     data: (state) => state.packing1,
     update: (fn) => (state) => {
-        const newData = fn(state.packing1)
+        const newData = fn(state.packing1, state)
         if (newData) {return {...state, packing1: {...state.packing1, ...newData}}}
         return state
     }
@@ -406,7 +415,7 @@ export const lazyPacking1:LazyCardSlot = {
 export const lazyPacking2:LazyCardSlot = {
     data: (state) => state.packing2,
     update: (fn) => (state) => {
-        const newData = fn(state.packing2)
+        const newData = fn(state.packing2, state)
         if (newData) {return {...state, packing2: {...state.packing2, ...newData}}}
         return state
     }
@@ -415,7 +424,7 @@ export const lazyPacking2:LazyCardSlot = {
 export const lazyPacking3:LazyCardSlot = {
     data: (state) => state.packing3,
     update: (fn) => (state) => {
-        const newData = fn(state.packing3)
+        const newData = fn(state.packing3, state)
         if (newData) {return {...state, packing3: {...state.packing3, ...newData}}}
         return state
     }
@@ -424,7 +433,7 @@ export const lazyPacking3:LazyCardSlot = {
 export const lazyPacking4:LazyCardSlot = {
     data: (state) => state.packing4,
     update: (fn) => (state) => {
-        const newData = fn(state.packing4)
+        const newData = fn(state.packing4, state)
         if (newData) {return {...state, packing4: {...state.packing4, ...newData}}}
         return state
     }
@@ -433,7 +442,7 @@ export const lazyPacking4:LazyCardSlot = {
 export const lazyPacking5:LazyCardSlot = {
     data: (state) => state.packing5,
     update: (fn) => (state) => {
-        const newData = fn(state.packing5)
+        const newData = fn(state.packing5, state)
         if (newData) {return {...state, packing5: {...state.packing5, ...newData}}}
         return state
     }
@@ -442,7 +451,7 @@ export const lazyPacking5:LazyCardSlot = {
 export const lazyPacking6:LazyCardSlot = {
     data: (state) => state.packing6,
     update: (fn) => (state) => {
-        const newData = fn(state.packing6)
+        const newData = fn(state.packing6, state)
         if (newData) {return {...state, packing6: {...state.packing6, ...newData}}}
         return state
     }
@@ -451,7 +460,7 @@ export const lazyPacking6:LazyCardSlot = {
 export const lazyPacking7:LazyCardSlot = {
     data: (state) => state.packing7,
     update: (fn) => (state) => {
-        const newData = fn(state.packing7)
+        const newData = fn(state.packing7, state)
         if (newData) {return {...state, packing7: {...state.packing7, ...newData}}}
         return state
     }
@@ -493,21 +502,32 @@ export function moveCard(event:MouseEvent):EventFn {
     }
 }
 
+function reverse<A>(list:ReadonlyArray<A>):ReadonlyArray<A> {
+    return [...list].reverse()
+}
+
 export function nextCard(state:State):State {
-    const handCards = [...state.sourcePile.cards]
-    const topCard = handCards.pop()
-    const updateWastePilePosition = updatePosition(state.wastePile)
-    if (topCard) {
-        const nextCard:Card = updateWastePilePosition(topCard)
-        const sourcePile:CardSlot = {...state.sourcePile, cards: handCards}
-        const wastePileCards = [...state.wastePile.cards, nextCard]
-        const wastePile:CardSlot = {...state.wastePile, cards: wastePileCards}
-        return {...state, sourcePile: sourcePile, wastePile}
-    } else {
-        const handCards:Card[] = [...state.wastePile.cards].reverse()
-        const sourcePile:CardSlot = {...state.sourcePile, cards: handCards}
-        const wastePile:CardSlot = {...state.wastePile, cards: []}
-        return {...state, sourcePile: sourcePile, wastePile}
+    const topCard = top(state.sourcePile.cards)
+    return topCard.cata(resetSource, addCardToWastePile)
+
+    function resetSource() {
+        return pipe(state)
+        .pipe(lazySourcePile.update((pile, state) => {
+            const position = updatePosition(pile)
+            return {cards: reverse(state.wastePile.cards).map(position)}
+        }))
+        .pipe(lazyWastePile.update(() => ({cards: []})))
+        .run()
+    }
+
+    function addCardToWastePile(card:Card) {
+        return pipe(state)
+        .pipe(removeTopCardsFromSlot(lazySourcePile, 1))
+        .pipe(lazyWastePile.update((slot) => {
+            const updatePositionOf = updatePosition(slot)
+            return {cards: slot.cards.concat([updatePositionOf(card)])}
+        }))
+        .run()
     }
 }
 
