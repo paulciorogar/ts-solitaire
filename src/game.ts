@@ -4,7 +4,7 @@ import {
     Hand, IdFunction, LazyCardSlot, newRectangle, NextFn, Point,
     Rectangle, RenderFn, slotRectangle, State, UpdateCardsPosition
 } from './state'
-import { peek, pipe, removeTop, topN } from './utility'
+import { peek, pipe, removeTop, top, topN } from './utility'
 
 export class Game {
 
@@ -42,7 +42,7 @@ export class Game {
 class NextState {
     constructor(readonly current:State, readonly oldState:State) {}
     map(fn:(current:State, oldState:State)=>State):NextState {
-        return new NextState(fn(this.current, this.oldState), this.current)
+        return new NextState(fn(this.current, this.oldState), this.oldState)
     }
 
     result():State {return this.current}
@@ -55,6 +55,7 @@ export function next(state:State):State {
         .map(containerSize)
         .map(cardSize)
         .map(cardSlotsPositions)
+        .map(flipSlotCards)
         .map(eligibleSlots)
         .map(targetSlot)
         .current
@@ -130,6 +131,33 @@ function cardSlotsPositions(state:State, oldState:State):State {
             const cards = data.cards.map(update)
             return {...data, cards: cards}
         }
+    }
+}
+
+function flipSlotCards(state:State, oldState:State):State {
+    return state.hand.cata(
+        () => {
+            return pipe(state)
+            .pipe(flip(lazyPacking1))
+            .pipe(flip(lazyPacking2))
+            .pipe(flip(lazyPacking3))
+            .pipe(flip(lazyPacking4))
+            .pipe(flip(lazyPacking5))
+            .pipe(flip(lazyPacking6))
+            .pipe(flip(lazyPacking7))
+            .run()
+        },
+        () => state
+    )
+
+    function flip(lazySlot:LazyCardSlot):IdFunction<State> {
+        return lazySlot.update((slot) => {
+            const topCard = top(slot.cards)
+            return topCard.fold(undefined)(card => {
+                if (card.orientation === 'up') return
+                return {cards: [...removeTop(slot.cards, 1), flipCard(card)]}
+            })
+        })
     }
 }
 
@@ -322,86 +350,110 @@ export function updateHand(fn:IdFunction<Maybe<Hand>>):IdFunction<State> {
 }
 
 export const lazyWastePile:LazyCardSlot = {
-    data: (state:State) => state.wastePile,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, wastePile: {...state.wastePile, ...fn(state.wastePile)}}
+    data: (state) => state.wastePile,
+    update: (fn) => (state) => {
+        const newData = fn(state.wastePile)
+        if (newData) {return {...state, wastePile: {...state.wastePile, ...newData}}}
+        return state
     }
 }
 
 export const lazyTarget1:LazyCardSlot = {
-    data: (state:State) => state.target1,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, target1: {...state.target1, ...fn(state.target1)}}
+    data: (state) => state.target1,
+    update: (fn) => (state) => {
+        const newData = fn(state.target1)
+        if (newData) {return {...state, target1: {...state.target1, ...newData}}}
+        return state
     }
 }
 
 export const lazyTarget2:LazyCardSlot = {
-    data: (state:State) => state.target2,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, target2: {...state.target2, ...fn(state.target2)}}
+    data: (state) => state.target2,
+    update: (fn) => (state) => {
+        const newData = fn(state.target2)
+        if (newData) {return {...state, target2: {...state.target2, ...newData}}}
+        return state
     }
 }
 
 export const lazyTarget3:LazyCardSlot = {
-    data: (state:State) => state.target3,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, target3: {...state.target3, ...fn(state.target3)}}
+    data: (state) => state.target3,
+    update: (fn) => (state) => {
+        const newData = fn(state.target3)
+        if (newData) {return {...state, target3: {...state.target3, ...newData}}}
+        return state
     }
 }
 
 export const lazyTarget4:LazyCardSlot = {
-    data: (state:State) => state.target4,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, target4: {...state.target4, ...fn(state.target4)}}
+    data: (state) => state.target4,
+    update: (fn) => (state) => {
+        const newData = fn(state.target4)
+        if (newData) {return {...state, target4: {...state.target4, ...newData}}}
+        return state
     }
 }
 
 export const lazyPacking1:LazyCardSlot = {
-    data: (state:State) => state.packing1,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, packing1: {...state.packing1, ...fn(state.packing1)}}
+    data: (state) => state.packing1,
+    update: (fn) => (state) => {
+        const newData = fn(state.packing1)
+        if (newData) {return {...state, packing1: {...state.packing1, ...newData}}}
+        return state
     }
 }
 
 export const lazyPacking2:LazyCardSlot = {
-    data: (state:State) => state.packing2,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, packing2: {...state.packing2, ...fn(state.packing2)}}
+    data: (state) => state.packing2,
+    update: (fn) => (state) => {
+        const newData = fn(state.packing2)
+        if (newData) {return {...state, packing2: {...state.packing2, ...newData}}}
+        return state
     }
 }
 
 export const lazyPacking3:LazyCardSlot = {
-    data: (state:State) => state.packing3,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, packing3: {...state.packing3, ...fn(state.packing3)}}
+    data: (state) => state.packing3,
+    update: (fn) => (state) => {
+        const newData = fn(state.packing3)
+        if (newData) {return {...state, packing3: {...state.packing3, ...newData}}}
+        return state
     }
 }
 
 export const lazyPacking4:LazyCardSlot = {
-    data: (state:State) => state.packing4,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, packing4: {...state.packing4, ...fn(state.packing4)}}
+    data: (state) => state.packing4,
+    update: (fn) => (state) => {
+        const newData = fn(state.packing4)
+        if (newData) {return {...state, packing4: {...state.packing4, ...newData}}}
+        return state
     }
 }
 
 export const lazyPacking5:LazyCardSlot = {
-    data: (state:State) => state.packing5,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, packing5: {...state.packing5, ...fn(state.packing5)}}
+    data: (state) => state.packing5,
+    update: (fn) => (state) => {
+        const newData = fn(state.packing5)
+        if (newData) {return {...state, packing5: {...state.packing5, ...newData}}}
+        return state
     }
 }
 
 export const lazyPacking6:LazyCardSlot = {
-    data: (state:State) => state.packing6,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, packing6: {...state.packing6, ...fn(state.packing6)}}
+    data: (state) => state.packing6,
+    update: (fn) => (state) => {
+        const newData = fn(state.packing6)
+        if (newData) {return {...state, packing6: {...state.packing6, ...newData}}}
+        return state
     }
 }
 
 export const lazyPacking7:LazyCardSlot = {
-    data: (state:State) => state.packing7,
-    update: (fn:(slot:CardSlot)=>Partial<CardSlot>) => (state:State):State => {
-        return {...state, packing7: {...state.packing7, ...fn(state.packing7)}}
+    data: (state) => state.packing7,
+    update: (fn) => (state) => {
+        const newData = fn(state.packing7)
+        if (newData) {return {...state, packing7: {...state.packing7, ...newData}}}
+        return state
     }
 }
 
@@ -479,6 +531,10 @@ function updateWastePile(fn:(data:CardSlot)=>Partial<CardSlot>):IdFunction<State
         const wastePile = {...state.wastePile, ...fn(state.wastePile)}
         return {...state, wastePile}
     }
+}
+
+export function flipCard(card:Card):Card {
+    return {...card, orientation: card.orientation === 'up'? 'down': 'up'}
 }
 
 const shape = {

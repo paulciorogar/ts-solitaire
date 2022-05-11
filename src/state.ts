@@ -1,5 +1,5 @@
 import { Maybe } from '../maybe'
-import { addCardsToWastePile, addCardToFn, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4 } from './game'
+import { addCardsToWastePile, addCardToFn, flipCard, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4 } from './game'
 
 export const conf = Object.freeze({
     backgroundColor: '#000000',
@@ -31,7 +31,7 @@ export type PickUpCardFn = (event:MouseEvent) => void
 export type CardDataFn = (state:State) => Maybe<Card>
 export type SlotDataFn = (state:State) => CardSlot
 export type MoveCardFn = (event:MouseEvent)=>void
-export type UpdateSlotFn = (fn:(slot:CardSlot)=>Partial<CardSlot>)=>IdFunction<State>
+export type UpdateSlotFn = (fn:(slot:CardSlot)=>Partial<CardSlot>|void)=>IdFunction<State>
 export type UpdateCardsPosition = (slot:CardSlot) => (card:Card, index:number) => Card
 export type SlotFn = (state:State)=>CardSlot
 
@@ -98,12 +98,6 @@ export type State = {
     readonly packing5:CardSlot
     readonly packing6:CardSlot
     readonly packing7:CardSlot
-}
-
-export function defaultTargetSlot():Maybe<CardSlot> {return Maybe.nothing()}
-
-export function flipCard(card:Card):Card {
-    return {...card, orientation: card.orientation === 'up'? 'down': 'up'}
 }
 
 export function newState():State {
