@@ -1,5 +1,6 @@
 import { Maybe } from '../maybe'
 import { addCardsToWastePile, addCardToFn, flipCard, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4 } from './game'
+import { shuffle, topN, removeTop } from './utility';
 
 export const conf = Object.freeze({
     backgroundColor: '#000000',
@@ -101,9 +102,29 @@ export type State = {
 }
 
 export function newState():State {
-    const cardDeck = newCardDeck()
-    const sixDown = cardDeck.slice(-7).map(flipCard)
-    const source = cardDeck.slice(0, cardDeck.length - 7)
+    let cardDeck = newCardDeck(1)
+
+    const pack1 = topN(cardDeck, 1).map(flipCard)
+    cardDeck = removeTop(cardDeck, 1)
+
+    const pack2 = topN(cardDeck, 2).map(flipCard)
+    cardDeck = removeTop(cardDeck, 2)
+
+    const pack3 = topN(cardDeck, 3).map(flipCard)
+    cardDeck = removeTop(cardDeck, 3)
+
+    const pack4 = topN(cardDeck, 4).map(flipCard)
+    cardDeck = removeTop(cardDeck, 4)
+
+    const pack5 = topN(cardDeck, 5).map(flipCard)
+    cardDeck = removeTop(cardDeck, 5)
+
+    const pack6 = topN(cardDeck, 6).map(flipCard)
+    cardDeck = removeTop(cardDeck, 6)
+
+    const pack7 = topN(cardDeck, 7).map(flipCard)
+    cardDeck = removeTop(cardDeck, 7)
+
     const point = {x: 0, y: 0}
     const size = {width: 0, height: 0}
     const rectangle = newRectangle(point, size)
@@ -115,19 +136,19 @@ export function newState():State {
         cardSize:   size,
         cardOffsetSize: 0,
         container:  {...size, ...point},
-        sourcePile: {...size, ...point, addCard: Fn, cards: source},
+        sourcePile: {...size, ...point, addCard: Fn, cards: cardDeck},
         wastePile:  {...size, ...point, addCard: addCardsToWastePile, cards: []},
         target1:    {...size, ...point, addCard: addCardToFn(lazyTarget1), cards: []},
         target2:    {...size, ...point, addCard: addCardToFn(lazyTarget2), cards: []},
         target3:    {...size, ...point, addCard: addCardToFn(lazyTarget3), cards: []},
         target4:    {...size, ...point, addCard: addCardToFn(lazyTarget4), cards: []},
-        packing1:   {...size, ...point, addCard: Fn, cards: []},
-        packing2:   {...size, ...point, addCard: Fn, cards: []},
-        packing3:   {...size, ...point, addCard: Fn, cards: []},
-        packing4:   {...size, ...point, addCard: Fn, cards: []},
-        packing5:   {...size, ...point, addCard: Fn, cards: []},
-        packing6:   {...size, ...point, addCard: Fn, cards: []},
-        packing7:   {...size, ...point, addCard: Fn, cards: sixDown},
+        packing1:   {...size, ...point, addCard: Fn, cards: pack1},
+        packing2:   {...size, ...point, addCard: Fn, cards: pack2},
+        packing3:   {...size, ...point, addCard: Fn, cards: pack3},
+        packing4:   {...size, ...point, addCard: Fn, cards: pack4},
+        packing5:   {...size, ...point, addCard: Fn, cards: pack5},
+        packing6:   {...size, ...point, addCard: Fn, cards: pack6},
+        packing7:   {...size, ...point, addCard: Fn, cards: pack7},
     }
 }
 
@@ -142,13 +163,13 @@ export function newRectangle(origin:Point, size:Dimensions):Rectangle {
     }
 }
 
-export function newCardDeck():Card[] {
-    return [
+export function newCardDeck(game:number):Card[] {
+    return shuffle([
         ...generateSuite('♠'),
         ...generateSuite('♣'),
         ...generateSuite('♥'),
         ...generateSuite('♦'),
-    ]
+    ], game)
 
     function generateSuite(suit:Suit):Card[] {
         return cardNumbers.map(num => ({

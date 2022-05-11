@@ -1,5 +1,5 @@
 import { Maybe } from '../maybe'
-import { Dimensions, Point, Rectangle } from './state';
+import { Dimensions, Point } from './state'
 export function debounce<A>(fn:(data:A)=>void, time:number) {
     let timeoutId:number|undefined = undefined
     return function (data:A) {
@@ -48,8 +48,8 @@ export function top<A>(list:A[]|ReadonlyArray<A>):Maybe<A> {
     return Maybe.from(element)
 }
 
-export function topN<A>(list:A[]|ReadonlyArray<A>, number:number):Maybe<ReadonlyArray<A>> {
-    return Maybe.from(list.slice(-1 * number))
+export function topN<A>(list:A[]|ReadonlyArray<A>, number:number):ReadonlyArray<A> {
+    return list.slice(-1 * number)
 }
 
 export const dom = {
@@ -66,4 +66,29 @@ export const dom = {
 
 export function removeTop<A>(list:ReadonlyArray<A>|A[], number = 1):A[] {
     return list.slice(0, list.length - number)
+}
+
+function mulberry32(seed:number) {
+    return function() {
+        let t = seed += 0x6D2B79F5
+        t = Math.imul(t ^ t >>> 15, t | 1)
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61)
+        return ((t ^ t >>> 14) >>> 0) / 4294967296
+    }
+}
+
+export function shuffle<A>(deck:A[], seed:number):A[] {
+    const rand = mulberry32(seed)
+    const newRand = (max:number) => Math.floor(rand() * max)
+    const list = [...deck]
+    let lastIndex = deck.length - 1
+
+    while (lastIndex > 0) {
+        const randIndex = newRand(lastIndex)
+        const lastIndexElem = list[lastIndex]
+        list[lastIndex] = list[randIndex]
+        list[randIndex] = lastIndexElem
+        lastIndex--
+    }
+    return list
 }

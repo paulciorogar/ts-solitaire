@@ -12,18 +12,16 @@ export function pickUpCards(
     return (event:MouseEvent) => newEvent((state:State):State => {
         const slot = lazySlot.data(state)
         const cards = topN(slot.cards, numberOfCards)
-        return cards.fold(state)(cards => {
-            return pipe(state)
-            .pipe(updateHand(() => Maybe.just({
-                startX: event.screenX,
-                startY: event.screenY,
-                cards,
-                hoveringSlot: Maybe.nothing(),
-                returnCard: addCardsToSlot(lazySlot),
-                addCardToSlot: Maybe.nothing()
-            })))
-            .pipe(removeTopCardsFromSlot(lazySlot, numberOfCards))
-            .run()
-        })
+        return pipe(state)
+        .pipe(updateHand(() => Maybe.just({
+            startX: event.screenX,
+            startY: event.screenY,
+            cards,
+            hoveringSlot: Maybe.nothing(),
+            returnCard: addCardsToSlot(lazySlot),
+            addCardToSlot: Maybe.nothing()
+        })))
+        .pipe(removeTopCardsFromSlot(lazySlot, numberOfCards))
+        .run()
     })
 }

@@ -4,7 +4,7 @@ import {
     Hand, IdFunction, LazyCardSlot, newRectangle, NextFn, Point,
     Rectangle, RenderFn, slotRectangle, State, UpdateCardsPosition
 } from './state'
-import { peek, pipe, removeTop, top, topN } from './utility'
+import { pipe, removeTop, top } from './utility'
 
 export class Game {
 
