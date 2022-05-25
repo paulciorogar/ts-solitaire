@@ -1,4 +1,4 @@
-import { Maybe } from '../maybe'
+import { Maybe } from './maybe'
 import { newFaceDownCard, newFaceUpCard } from './cardComponent'
 import { Component } from './component'
 import {
@@ -14,14 +14,14 @@ import { dom, px, throttle, top } from './utility'
 
 export class Factory {
 
-    constructor(private document:Document, readonly newEvent:NewEventFn) {}
+    constructor (private document: Document, readonly newEvent: NewEventFn) { }
 
-    mainContainer(state:State):Component<any> {
+    mainContainer (state: State): Component<any> {
         const factory = this
         const element = this.document.createElement('div')
         const moveCardCallback = this.moveCard()
 
-        let handComponent:Maybe<Component<any>> = Maybe.nothing()
+        let handComponent: Maybe<Component<any>> = Maybe.nothing()
         element.style.position = 'fixed'
         element.style.width = '100%'
         element.style.height = '100%'
@@ -42,7 +42,7 @@ export class Factory {
         container.append(this.packing7())
         return container
 
-        function update(state:State, oldState:State, component:Component<'div'>) {
+        function update (state: State, oldState: State, component: Component<'div'>) {
             if (state.container !== oldState.container) {
                 dom.updateDimensions(element, state.container)
                 dom.updatePosition(element, state.container)
@@ -52,15 +52,15 @@ export class Factory {
                 handComponent = state.hand.cata(removeComponent, addComponent)
             }
 
-            function removeComponent():Maybe<Component<any>> {
+            function removeComponent (): Maybe<Component<any>> {
                 return handComponent.bind(cmp => {
-                    document.body.removeEventListener('mousemove',  moveCardCallback)
+                    document.body.removeEventListener('mousemove', moveCardCallback)
                     component.remove(cmp)
                     return Maybe.nothing()
                 })
             }
 
-            function addComponent():Maybe<Component<any>> {
+            function addComponent (): Maybe<Component<any>> {
                 return handComponent.catchMap(() => {
                     const newHandComponent = factory.handComponent(state)
                     newHandComponent.element.addEventListener('mouseup', factory.setCard())
@@ -72,19 +72,19 @@ export class Factory {
         }
     }
 
-    handComponent(state:State) {
+    handComponent (state: State) {
         const element = this.document.createElement('div')
         const component = new Component(element, update(this))
         return component
 
-        function update(factory:Factory) {
-            return (state:State, oldState:State) => {
+        function update (factory: Factory) {
+            return (state: State, oldState: State) => {
                 const cards = state.hand.fold([])(hand => hand.cards)
                 const oldCards = oldState.hand.fold([])(hand => hand.cards)
                 if (cards === oldCards) return
                 component.removeAll()
                 cards.forEach((_, index) => {
-                    const cardData = (state:State) => state.hand.bind(hand => Maybe.from(hand.cards[index]))
+                    const cardData = (state: State) => state.hand.bind(hand => Maybe.from(hand.cards[index]))
                     const cardComponent = factory.card(NO_OP, cardData)
                     component.append(cardComponent(state))
                 })
@@ -92,11 +92,11 @@ export class Factory {
         }
     }
 
-    sourcePile():Component<'div'> {
+    sourcePile (): Component<'div'> {
         const element = this.cardSlotElement()
         element.addEventListener('click', () => this.newEvent(nextCard))
-        let card:Component<any>|undefined = undefined
-        const update = (state:State, oldState:State, component:Component<'div'>) => {
+        let card: Component<any> | undefined = undefined
+        const update = (state: State, oldState: State, component: Component<'div'>) => {
             if (state.sourcePile === oldState.sourcePile) return
             dom.updateDimensions(element, state.sourcePile)
             dom.updatePosition(element, state.sourcePile)
@@ -107,7 +107,7 @@ export class Factory {
             }
 
             if (state.sourcePile.cards.length > 0 && card === undefined) {
-                const cardData = (state:State) => top(state.sourcePile.cards)
+                const cardData = (state: State) => top(state.sourcePile.cards)
                 card = this._faceDownCard(state, cardData)
                 component.append(card)
             }
@@ -117,7 +117,7 @@ export class Factory {
         return result
     }
 
-    wastePile(state:State):Component<any> {
+    wastePile (state: State): Component<any> {
         const factory = this
         const pickUpCard = this.pickUpCards(lazyWastePile)
         const element = this.cardSlotElement()
@@ -125,7 +125,7 @@ export class Factory {
         renderCards(state)
         return component
 
-        function update(state:State, oldState:State) {
+        function update (state: State, oldState: State) {
             if (state.wastePile === oldState.wastePile) return
             dom.updateDimensions(element, state.wastePile)
             dom.updatePosition(element, state.wastePile)
@@ -135,21 +135,21 @@ export class Factory {
             }
         }
 
-        function renderCards(state:State) {
+        function renderCards (state: State) {
             component.removeAll()
-            const lazyCardData = (state:State) => top(state.wastePile.cards)
+            const lazyCardData = (state: State) => top(state.wastePile.cards)
             const cardData = lazyCardData(state)
             cardData.map(addCard)
 
-            function addCard(data:Card) {
+            function addCard (data: Card) {
                 const comp = factory.card(pickUpCard, lazyCardData)
                 component.append(comp(state))
             }
         }
     }
 
-    target1(state:State):Component<any> {
-        const cardData = (state:State) => top(state.target1.cards)
+    target1 (state: State): Component<any> {
+        const cardData = (state: State) => top(state.target1.cards)
         const pickUpCard = this.pickUpCards(lazyTarget1)
 
         return targetSlotFactory({
@@ -161,8 +161,8 @@ export class Factory {
         })
     }
 
-    target2(state:State):Component<any> {
-        const cardData = (state:State) => top(state.target2.cards)
+    target2 (state: State): Component<any> {
+        const cardData = (state: State) => top(state.target2.cards)
         const pickUpCard = this.pickUpCards(lazyTarget2)
 
         return targetSlotFactory({
@@ -174,8 +174,8 @@ export class Factory {
         })
     }
 
-    target3(state:State):Component<any> {
-        const cardData = (state:State) => top(state.target3.cards)
+    target3 (state: State): Component<any> {
+        const cardData = (state: State) => top(state.target3.cards)
         const pickUpCard = this.pickUpCards(lazyTarget3)
 
         return targetSlotFactory({
@@ -187,8 +187,8 @@ export class Factory {
         })
     }
 
-    target4(state:State):Component<any> {
-        const cardData = (state:State) => top(state.target4.cards)
+    target4 (state: State): Component<any> {
+        const cardData = (state: State) => top(state.target4.cards)
         const pickUpCard = this.pickUpCards(lazyTarget4)
 
         return targetSlotFactory({
@@ -200,51 +200,51 @@ export class Factory {
         })
     }
 
-    packing1():Component<any> {
+    packing1 (): Component<any> {
         return packingComponent(this, lazyPacking1)
     }
 
-    packing2():Component<any> {
+    packing2 (): Component<any> {
         return packingComponent(this, lazyPacking2)
     }
 
-    packing3():Component<any> {
+    packing3 (): Component<any> {
         return packingComponent(this, lazyPacking3)
     }
 
-    packing4():Component<any> {
+    packing4 (): Component<any> {
         return packingComponent(this, lazyPacking4)
     }
 
-    packing5():Component<any> {
+    packing5 (): Component<any> {
         return packingComponent(this, lazyPacking5)
     }
 
-    packing6():Component<any> {
+    packing6 (): Component<any> {
         return packingComponent(this, lazyPacking6)
     }
 
-    packing7():Component<any> {
+    packing7 (): Component<any> {
         return packingComponent(this, lazyPacking7)
     }
 
-    card(pickUpCard:PickUpCardFn, cardData:CardDataFn) {
-        return (state:State) => {
+    card (pickUpCard: PickUpCardFn, cardData: CardDataFn) {
+        return (state: State) => {
             return newFaceUpCard(this.document, state, pickUpCard, cardData)
         }
     }
 
-    setCard() {
+    setCard () {
         return () => this.newEvent(setCard)
     }
 
-    moveCard() {
-        return throttle((event:MouseEvent) => {
+    moveCard () {
+        return throttle((event: MouseEvent) => {
             this.newEvent(moveCard(event))
         }, 16)
     }
 
-    faceDownCard() {
+    faceDownCard () {
         const element = this.document.createElement('div')
         element.style.borderRadius = px(8)
         element.style.height = '100%'
@@ -262,11 +262,11 @@ export class Factory {
         return result
     }
 
-    _faceDownCard(state:State, cardData:CardDataFn) {
+    _faceDownCard (state: State, cardData: CardDataFn) {
         return newFaceDownCard(this.document, state, cardData)
     }
 
-    cardSlotElement():HTMLDivElement {
+    cardSlotElement (): HTMLDivElement {
         const element = this.document.createElement('div')
         element.style.borderRadius = px(8)
         element.style.position = 'fixed'
@@ -276,11 +276,11 @@ export class Factory {
         return element
     }
 
-    pickUpCards(lazySlot:LazyCardSlot, numberOfCards = 1) {
+    pickUpCards (lazySlot: LazyCardSlot, numberOfCards = 1) {
         return pickUpCards(this.newEvent, addCardsToSlot, lazySlot, numberOfCards)
     }
 
-    pickUpCardsWithOffset(lazySlot:LazyCardSlot, numberOfCards = 1) {
+    pickUpCardsWithOffset (lazySlot: LazyCardSlot, numberOfCards = 1) {
         return pickUpCards(this.newEvent, addCardsToPackingSlot, lazySlot, numberOfCards)
     }
 }

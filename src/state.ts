@@ -1,6 +1,6 @@
-import { Maybe } from '../maybe'
+import { Maybe } from './maybe'
 import { addCardsToWastePile, addCardToFn, flipCard, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4 } from './game'
-import { shuffle, topN, removeTop } from './utility';
+import { shuffle, topN, removeTop } from './utility'
 
 export const conf = Object.freeze({
     backgroundColor: '#000000',
@@ -9,52 +9,52 @@ export const conf = Object.freeze({
     blackSuitColor: '#4488df',
     // redSuitColor: '#df4444',
     redSuitColor: '#cbcbcb',
-    cardRatio: {x: 63, y:88},
+    cardRatio: { x: 63, y: 88 },
     cardMargin: 10,
     columns: 7,
     containerMargin: 40,
-    aspectRation: {x: 16, y: 10},
+    aspectRation: { x: 16, y: 10 },
     cardStackOffset: 0.15,
 })
 
-const cardNumbers = [1,2,3,4,5,6,7,8,9,10,11,12,13] as const
+const cardNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const
 
-export function NO_OP() {}
-export const Fn:IdFunction<any> = (data) => data
+export function NO_OP () { }
+export const Fn: IdFunction<any> = (data) => data
 
-export type IdFunction<A> = (data:A) => A
+export type IdFunction<A> = (data: A) => A
 export type NextFn = IdFunction<State>
-export type RenderFn = (state:State, oldState:State) => void
+export type RenderFn = (state: State, oldState: State) => void
 export type EventFn = IdFunction<State>
-export type NewEventFn = (fn:EventFn)=>void
-export type AddCardsToSlotFn = (lazySlot:LazyCardSlot) => IdFunction<State>
-export type PickUpCardFn = (event:MouseEvent) => void
-export type CardDataFn = (state:State) => Maybe<Card>
-export type SlotDataFn = (state:State) => CardSlot
-export type MoveCardFn = (event:MouseEvent)=>void
-export type UpdateSlotFn = (fn:(slot:CardSlot, state:State)=>Partial<CardSlot>|void)=>IdFunction<State>
-export type UpdateCardsPosition = (slot:CardSlot) => (card:Card, index:number) => Card
-export type SlotFn = (state:State)=>CardSlot
+export type NewEventFn = (fn: EventFn) => void
+export type AddCardsToSlotFn = (lazySlot: LazyCardSlot) => IdFunction<State>
+export type PickUpCardFn = (event: MouseEvent) => void
+export type CardDataFn = (state: State) => Maybe<Card>
+export type SlotDataFn = (state: State) => CardSlot
+export type MoveCardFn = (event: MouseEvent) => void
+export type UpdateSlotFn = (fn: (slot: CardSlot, state: State) => Partial<CardSlot> | void) => IdFunction<State>
+export type UpdateCardsPosition = (slot: CardSlot) => (card: Card, index: number) => Card
+export type SlotFn = (state: State) => CardSlot
 
-export type Dimensions = {readonly width:number, readonly height:number}
-export type Point = {readonly x:number, readonly y:number }
-export type Rectangle = {a:Point, b:Point}
+export type Dimensions = { readonly width: number, readonly height: number }
+export type Point = { readonly x: number, readonly y: number }
+export type Rectangle = { a: Point, b: Point }
 
-export type Orientation = 'up'|'down'
+export type Orientation = 'up' | 'down'
 export type Spade = '\u2660'
 export type Club = '\u2663'
 export type Heart = '\u2665'
 export type Diamond = '\u2666'
-export type Suit = Club|Spade|Heart|Diamond
+export type Suit = Club | Spade | Heart | Diamond
 export type CardNumber = typeof cardNumbers[number]
 export type Card = {
     readonly orientation: Orientation
-    readonly suit:Suit
-    readonly number:CardNumber
+    readonly suit: Suit
+    readonly number: CardNumber
 } & Point
-export type CardStack = {cards: ReadonlyArray<Card>}
+export type CardStack = { cards: ReadonlyArray<Card> }
 export type CardSlot = Dimensions & Point & CardStack & {
-    addCard:IdFunction<State>
+    addCard: IdFunction<State>
 }
 export type LazyCardSlot = {
     data: SlotFn,
@@ -68,40 +68,40 @@ export type EligibleSlot = {
 }
 
 export type Hand = {
-    startX:number
-    startY:number
-    cards:ReadonlyArray<Card>
-    hoveringSlot:Maybe<LazyCardSlot>
-    returnCard:EventFn
-    addCardToSlot:Maybe<IdFunction<State>>
+    startX: number
+    startY: number
+    cards: ReadonlyArray<Card>
+    hoveringSlot: Maybe<LazyCardSlot>
+    returnCard: EventFn
+    addCardToSlot: Maybe<IdFunction<State>>
 }
 
 
 
 export type State = {
-    readonly eligibleSlots:ReadonlyArray<EligibleSlot>
-    readonly hand:Maybe<Hand>
-    readonly eventQ:ReadonlyArray<EventFn>
+    readonly eligibleSlots: ReadonlyArray<EligibleSlot>
+    readonly hand: Maybe<Hand>
+    readonly eventQ: ReadonlyArray<EventFn>
     readonly body: Dimensions
     readonly container: Dimensions & Point
     readonly cardSize: Dimensions
     readonly cardOffsetSize: number
-    readonly sourcePile:CardSlot
-    readonly wastePile:CardSlot
-    readonly target1:CardSlot
-    readonly target2:CardSlot
-    readonly target3:CardSlot
-    readonly target4:CardSlot
-    readonly packing1:CardSlot
-    readonly packing2:CardSlot
-    readonly packing3:CardSlot
-    readonly packing4:CardSlot
-    readonly packing5:CardSlot
-    readonly packing6:CardSlot
-    readonly packing7:CardSlot
+    readonly sourcePile: CardSlot
+    readonly wastePile: CardSlot
+    readonly target1: CardSlot
+    readonly target2: CardSlot
+    readonly target3: CardSlot
+    readonly target4: CardSlot
+    readonly packing1: CardSlot
+    readonly packing2: CardSlot
+    readonly packing3: CardSlot
+    readonly packing4: CardSlot
+    readonly packing5: CardSlot
+    readonly packing6: CardSlot
+    readonly packing7: CardSlot
 }
 
-export function newState():State {
+export function newState (): State {
     let cardDeck = newCardDeck(1)
 
     const pack1 = topN(cardDeck, 1).map(flipCard)
@@ -125,45 +125,45 @@ export function newState():State {
     const pack7 = topN(cardDeck, 7).map(flipCard)
     cardDeck = removeTop(cardDeck, 7)
 
-    const point = {x: 0, y: 0}
-    const size = {width: 0, height: 0}
+    const point = { x: 0, y: 0 }
+    const size = { width: 0, height: 0 }
     const rectangle = newRectangle(point, size)
     return {
         eligibleSlots: [],
-        hand:       Maybe.nothing(),
-        eventQ:     [],
-        body:       size,
-        cardSize:   size,
+        hand: Maybe.nothing(),
+        eventQ: [],
+        body: size,
+        cardSize: size,
         cardOffsetSize: 0,
-        container:  {...size, ...point},
-        sourcePile: {...size, ...point, addCard: Fn, cards: cardDeck},
-        wastePile:  {...size, ...point, addCard: addCardsToWastePile, cards: []},
-        target1:    {...size, ...point, addCard: addCardToFn(lazyTarget1), cards: []},
-        target2:    {...size, ...point, addCard: addCardToFn(lazyTarget2), cards: []},
-        target3:    {...size, ...point, addCard: addCardToFn(lazyTarget3), cards: []},
-        target4:    {...size, ...point, addCard: addCardToFn(lazyTarget4), cards: []},
-        packing1:   {...size, ...point, addCard: Fn, cards: pack1},
-        packing2:   {...size, ...point, addCard: Fn, cards: pack2},
-        packing3:   {...size, ...point, addCard: Fn, cards: pack3},
-        packing4:   {...size, ...point, addCard: Fn, cards: pack4},
-        packing5:   {...size, ...point, addCard: Fn, cards: pack5},
-        packing6:   {...size, ...point, addCard: Fn, cards: pack6},
-        packing7:   {...size, ...point, addCard: Fn, cards: pack7},
+        container: { ...size, ...point },
+        sourcePile: { ...size, ...point, addCard: Fn, cards: cardDeck },
+        wastePile: { ...size, ...point, addCard: addCardsToWastePile, cards: [] },
+        target1: { ...size, ...point, addCard: addCardToFn(lazyTarget1), cards: [] },
+        target2: { ...size, ...point, addCard: addCardToFn(lazyTarget2), cards: [] },
+        target3: { ...size, ...point, addCard: addCardToFn(lazyTarget3), cards: [] },
+        target4: { ...size, ...point, addCard: addCardToFn(lazyTarget4), cards: [] },
+        packing1: { ...size, ...point, addCard: Fn, cards: pack1 },
+        packing2: { ...size, ...point, addCard: Fn, cards: pack2 },
+        packing3: { ...size, ...point, addCard: Fn, cards: pack3 },
+        packing4: { ...size, ...point, addCard: Fn, cards: pack4 },
+        packing5: { ...size, ...point, addCard: Fn, cards: pack5 },
+        packing6: { ...size, ...point, addCard: Fn, cards: pack6 },
+        packing7: { ...size, ...point, addCard: Fn, cards: pack7 },
     }
 }
 
-export function slotRectangle(slot:CardSlot):Rectangle {
+export function slotRectangle (slot: CardSlot): Rectangle {
     return newRectangle(slot, slot)
 }
 
-export function newRectangle(origin:Point, size:Dimensions):Rectangle {
+export function newRectangle (origin: Point, size: Dimensions): Rectangle {
     return {
         a: origin,
-        b: {x: origin.x + size.width, y: origin.y + size.height}
+        b: { x: origin.x + size.width, y: origin.y + size.height }
     }
 }
 
-export function newCardDeck(game:number):Card[] {
+export function newCardDeck (game: number): Card[] {
     return shuffle([
         ...generateSuite('♠'),
         ...generateSuite('♣'),
@@ -171,7 +171,7 @@ export function newCardDeck(game:number):Card[] {
         ...generateSuite('♦'),
     ], game)
 
-    function generateSuite(suit:Suit):Card[] {
+    function generateSuite (suit: Suit): Card[] {
         return cardNumbers.map(num => ({
             number: num,
             orientation: 'up',

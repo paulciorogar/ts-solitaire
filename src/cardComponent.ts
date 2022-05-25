@@ -1,13 +1,12 @@
 import { Component } from './component'
-import { addOffsetY } from './game'
 import { Card, CardDataFn, CardNumber, conf, PickUpCardFn, State, Suit } from './state'
 import { dom, px } from './utility'
 
-export function newFaceUpCard(
-    document:Document,
-    state:State,
-    pickUpCard:PickUpCardFn,
-    cardData:CardDataFn,
+export function newFaceUpCard (
+    document: Document,
+    state: State,
+    pickUpCard: PickUpCardFn,
+    cardData: CardDataFn,
 ) {
     const element = document.createElement('div')
     const topRow = document.createElement('div')
@@ -68,7 +67,7 @@ export function newFaceUpCard(
     const component = new Component(element, update)
     return component
 
-    function update(state:State, oldState:State, component:Component<'div'>) {
+    function update (state: State, oldState: State, component: Component<'div'>) {
         if (state.cardSize !== oldState.cardSize) {
             renderDimensions(state)
         }
@@ -80,7 +79,7 @@ export function newFaceUpCard(
         data.map(renderCardData)
     }
 
-    function renderCardData(data: Card) {
+    function renderCardData (data: Card) {
         element.id = [cardNumber(data.number), data.suit].join('-')
         element.style.color = suitColor(data.suit)
         numberTop.textContent = cardNumber(data.number)
@@ -90,7 +89,7 @@ export function newFaceUpCard(
         suiteMiddle.textContent = data.suit
     }
 
-    function renderDimensions(state:State) {
+    function renderDimensions (state: State) {
         const data = cardData(state)
         data.map(card => dom.updatePosition(element, card))
 
@@ -106,10 +105,10 @@ export function newFaceUpCard(
     }
 }
 
-export function newFaceDownCard(
-    document:Document,
-    state:State,
-    cardData:CardDataFn,
+export function newFaceDownCard (
+    document: Document,
+    state: State,
+    cardData: CardDataFn,
 ) {
     const element = document.createElement('div')
     element.style.position = 'fixed'
@@ -126,7 +125,7 @@ export function newFaceDownCard(
     const component = new Component(element, update)
     return component
 
-    function update(state:State, oldState:State, component:Component<'div'>) {
+    function update (state: State, oldState: State, component: Component<'div'>) {
         if (state.cardSize !== oldState.cardSize) {
             renderDimensions(state)
         }
@@ -138,12 +137,12 @@ export function newFaceDownCard(
         data.map(renderCardData)
     }
 
-    function renderCardData(data: Card) {
+    function renderCardData (data: Card) {
         element.id = [cardNumber(data.number), data.suit].join('-')
         element.style.color = suitColor(data.suit)
     }
 
-    function renderDimensions(state:State) {
+    function renderDimensions (state: State) {
         const data = cardData(state)
         data.map(card => dom.updatePosition(element, card))
 
@@ -152,8 +151,8 @@ export function newFaceDownCard(
     }
 }
 
-function suitColor(suit:Suit):string {
-    switch(suit) {
+function suitColor (suit: Suit): string {
+    switch (suit) {
         case '♠': return conf.blackSuitColor
         case '♣': return conf.blackSuitColor
         case '♥': return conf.redSuitColor
@@ -161,7 +160,7 @@ function suitColor(suit:Suit):string {
     }
 }
 
-function cardNumber(number:CardNumber):string {
+function cardNumber (number: CardNumber): string {
     if (number === 1) return ' A'
     if (number === 11) return ' J'
     if (number === 12) return ' Q'
