@@ -11,13 +11,13 @@ export type TargetSlotFactorySpec = {
     newCardComponent: (state: State) => Component<any>
 }
 
-export function targetSlotFactory (spec: TargetSlotFactorySpec): Component<any> {
+export function targetSlotFactory(spec: TargetSlotFactorySpec): Component<any> {
     const { state, element, cardData, slotData, newCardComponent } = spec
     const component = new Component(element, update)
     renderCard(state)
     return component
 
-    function update (state: State, oldState: State) {
+    function update(state: State, oldState: State) {
         const slot = slotData(state)
         const oldSlot = slotData(oldState)
 
@@ -43,8 +43,8 @@ export function targetSlotFactory (spec: TargetSlotFactorySpec): Component<any> 
         }
     }
 
-    function renderCard (state: State) {
+    function renderCard(state: State) {
         component.removeAll()
-        cardData(state).map(() => component.append(newCardComponent(state)))
+        cardData(state).forEach(() => component.append(newCardComponent(state)))
     }
 }

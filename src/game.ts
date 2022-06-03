@@ -11,7 +11,7 @@ export class Game {
     private state: State
     private oldState: State
 
-    constructor (
+    constructor(
         private window: Window,
         initialState: State,
         private next: NextFn,
@@ -21,7 +21,7 @@ export class Game {
         this.oldState = initialState
     }
 
-    run () {
+    run() {
         const render = this.renderFn()
         const step: FrameRequestCallback = t => {
             this.oldState = this.state
@@ -32,7 +32,7 @@ export class Game {
         this.window.requestAnimationFrame(step)
     }
 
-    newEvent (fn: EventFn) {
+    newEvent(fn: EventFn) {
         const { eventQ } = this.state
         this.oldState = this.state
         this.state = { ...this.state, eventQ: [...eventQ, fn] }
@@ -40,16 +40,16 @@ export class Game {
 }
 
 class NextState {
-    constructor (readonly current: State, readonly oldState: State) { }
-    map (fn: (current: State, oldState: State) => State): NextState {
+    constructor(readonly current: State, readonly oldState: State) { }
+    map(fn: (current: State, oldState: State) => State): NextState {
         return new NextState(fn(this.current, this.oldState), this.oldState)
     }
 
-    result (): State { return this.current }
-    previous (): State { return this.oldState }
+    result(): State { return this.current }
+    previous(): State { return this.oldState }
 }
 
-export function next (state: State): State {
+export function next(state: State): State {
     const data = new NextState(state, state)
     return data.map(processEvents)
         .map(containerSize)
@@ -61,12 +61,12 @@ export function next (state: State): State {
         .current
 }
 
-function processEvents (state: State): State {
+function processEvents(state: State): State {
     state = state.eventQ.reduce((result, fn) => fn(result), state)
     return { ...state, eventQ: [] }
 }
 
-function containerSize (state: State, oldState: State): State {
+function containerSize(state: State, oldState: State): State {
     if (state.body === oldState.body) return state
     const { aspectRation } = conf
     const point: Point = { x: conf.containerMargin, y: conf.containerMargin }
@@ -83,7 +83,7 @@ function containerSize (state: State, oldState: State): State {
     return { ...state, container: { ...point, width: width, height: containerAvailableSpace.y } }
 }
 
-function cardSize (state: State, oldState: State): State {
+function cardSize(state: State, oldState: State): State {
     if (state.container === oldState.container) return state
     const { cardRatio } = conf
     const availableSpace = state.container.width - (conf.cardMargin * (conf.columns - 2))
@@ -96,7 +96,7 @@ function cardSize (state: State, oldState: State): State {
     return { ...state, cardSize: card, cardOffsetSize }
 }
 
-function cardSlotsPositions (state: State, oldState: State): State {
+function cardSlotsPositions(state: State, oldState: State): State {
     if (state.cardSize === oldState.cardSize) return state
     const width = conf.cardMargin + state.cardSize.width
     const height = 2 * conf.cardMargin + state.cardSize.height
@@ -120,14 +120,14 @@ function cardSlotsPositions (state: State, oldState: State): State {
         packing1, packing2, packing3, packing4, packing5, packing6, packing7
     }
 
-    function updateSlot (slot: CardSlot, position: Point, updateCardsPosition: UpdateCardsPosition): CardSlot {
+    function updateSlot(slot: CardSlot, position: Point, updateCardsPosition: UpdateCardsPosition): CardSlot {
         return pipe(slot)
             .pipe(updateSize(state.cardSize))
             .pipe(updatePosition(position))
             .pipe(updateCards)
             .run()
 
-        function updateCards (data: CardSlot): CardSlot {
+        function updateCards(data: CardSlot): CardSlot {
             const update = updateCardsPosition(data)
             const cards = data.cards.map(update)
             return { ...data, cards: cards }
@@ -135,7 +135,7 @@ function cardSlotsPositions (state: State, oldState: State): State {
     }
 }
 
-function flipSlotCards (state: State, oldState: State): State {
+function flipSlotCards(state: State, oldState: State): State {
     return state.hand.cata(
         () => {
             return pipe(state)
@@ -151,18 +151,17 @@ function flipSlotCards (state: State, oldState: State): State {
         () => state
     )
 
-    function flip (lazySlot: LazyCardSlot): IdFunction<State> {
+    function flip(lazySlot: LazyCardSlot): IdFunction<State> {
         return lazySlot.update((slot) => {
             const topCard = top(slot.cards)
-            return topCard.fold(undefined)(card => {
-                if (card.orientation === 'up') return
-                return { cards: [...removeTop(slot.cards, 1), flipCard(card)] }
-            })
+            return topCard.filter(card => card.orientation !== 'up')
+                .map(card => ({ cards: [...removeTop(slot.cards, 1), flipCard(card)] }))
+                .orElse(undefined)
         })
     }
 }
 
-function eligibleSlots (state: State): State {
+function eligibleSlots(state: State): State {
     const overlappingArea = (card: Card, slot: CardSlot) => {
         const rect1 = newRectangle(card, state.cardSize)
         const rect2 = slotRectangle(slot)
@@ -170,19 +169,19 @@ function eligibleSlots (state: State): State {
     }
 
     const calculateOverlappingArea = (state: State, slot: CardSlot) =>
-        state.hand.fold(0)(hand => {
+        state.hand.map(hand => {
             const [first] = hand.cards
             return first ? overlappingArea(first, slot) : 0
-        })
+        }).orElse(0)
 
     const calculateOverlappingAreaWithOffset = (state: State, slot: CardSlot) => {
         const { cardOffsetSize } = state
         const height = state.cardSize.height + slot.cards.length * cardOffsetSize
         const adjustSize = updateSize({ width: state.cardSize.width, height })
-        return state.hand.fold(0)(hand => {
+        return state.hand.map(hand => {
             const [first] = hand.cards
             return first ? overlappingArea(first, adjustSize(slot)) : 0
-        })
+        }).orElse(0)
     }
 
     return {
@@ -246,7 +245,7 @@ function eligibleSlots (state: State): State {
     }
 }
 
-function _eligibleSlots (state: State, oldState: State): State {
+function _eligibleSlots(state: State, oldState: State): State {
     if (state.hand === oldState.hand) return state
     const eligibleSlots: EligibleSlot[] = []
     const { just } = Maybe
@@ -266,26 +265,27 @@ function _eligibleSlots (state: State, oldState: State): State {
             eligiblePackingSlot(state, lazyPacking7, cardInHand).map(slot => eligibleSlots.push(slot))
             return just(eligibleSlots)
         })
-        .fold(state)(slots => ({ ...state, eligibleSlots: slots }))
+        .map(slots => ({ ...state, eligibleSlots: slots }))
+        .orElse(state)
 }
 
-function eligibleTargetSlot (state: State, lazySlot: LazyCardSlot, card: Card): Maybe<EligibleSlot> {
+function eligibleTargetSlot(state: State, lazySlot: LazyCardSlot, card: Card): Maybe<EligibleSlot> {
     const slot = lazySlot.data(state)
     const topCard = top(slot.cards)
     return topCard.cata(none, some)
 
-    function none (): Maybe<EligibleSlot> {
+    function none(): Maybe<EligibleSlot> {
         if (card.number === 1) return Maybe.just(newEligibleSlot())
         return Maybe.nothing()
     }
 
-    function some (topCard: Card): Maybe<EligibleSlot> {
+    function some(topCard: Card): Maybe<EligibleSlot> {
         if (topCard.suit !== card.suit) return Maybe.nothing()
         if (topCard.number + 1 !== card.number) return Maybe.nothing()
         return Maybe.just(newEligibleSlot())
     }
 
-    function newEligibleSlot (): EligibleSlot {
+    function newEligibleSlot(): EligibleSlot {
         return {
             ...lazySlot,
             overlappingArea: overlappingArea(card, slot, state.cardSize),
@@ -294,23 +294,23 @@ function eligibleTargetSlot (state: State, lazySlot: LazyCardSlot, card: Card): 
     }
 }
 
-function eligiblePackingSlot (state: State, lazySlot: LazyCardSlot, cardInHand: Card): Maybe<EligibleSlot> {
+function eligiblePackingSlot(state: State, lazySlot: LazyCardSlot, cardInHand: Card): Maybe<EligibleSlot> {
     const slot = lazySlot.data(state)
     const card = top(slot.cards)
     return card.cata(none, some)
 
-    function none (): Maybe<EligibleSlot> {
+    function none(): Maybe<EligibleSlot> {
         if (cardInHand.number === 13) return Maybe.just(newEligibleSlot())
         return Maybe.nothing()
     }
 
-    function some (card: Card): Maybe<EligibleSlot> {
+    function some(card: Card): Maybe<EligibleSlot> {
         if (sameColor(card.suit, cardInHand.suit)) return Maybe.nothing()
         if (card.number - 1 !== cardInHand.number) return Maybe.nothing()
         return Maybe.just(newEligibleSlot())
     }
 
-    function newEligibleSlot (): EligibleSlot {
+    function newEligibleSlot(): EligibleSlot {
         return {
             ...lazySlot,
             overlappingArea: overlappingAreaWithOffset(cardInHand, slot, state),
@@ -319,20 +319,20 @@ function eligiblePackingSlot (state: State, lazySlot: LazyCardSlot, cardInHand: 
     }
 }
 
-function overlappingArea (card: Card, slot: CardSlot, cardSize: Dimensions): number {
+function overlappingArea(card: Card, slot: CardSlot, cardSize: Dimensions): number {
     const rect1 = newRectangle(card, cardSize)
     const rect2 = slotRectangle(slot)
     return shape.overlappingArea(rect1, rect2)
 }
 
-function overlappingAreaWithOffset (card: Card, slot: CardSlot, state: State): number {
+function overlappingAreaWithOffset(card: Card, slot: CardSlot, state: State): number {
     const { cardOffsetSize } = state
     const height = state.cardSize.height + slot.cards.length * cardOffsetSize
     const adjustSize = updateSize({ width: state.cardSize.width, height })
     return overlappingArea(card, adjustSize(slot), state.cardSize)
 }
 
-function sameColor (suit1: Suit, suit2: Suit): boolean {
+function sameColor(suit1: Suit, suit2: Suit): boolean {
     switch (suit1) {
         case '♠': return suit1 === suit2 || suit2 === '♣'
         case '♣': return suit1 === suit2 || suit2 === '♠'
@@ -342,12 +342,12 @@ function sameColor (suit1: Suit, suit2: Suit): boolean {
 }
 
 
-function targetSlot (state: State): State {
+function targetSlot(state: State): State {
     return state.hand.cata(clear, findTargetSlot)
 
-    function clear () { return state }
+    function clear() { return state }
 
-    function findTargetSlot (hand: Hand): State {
+    function findTargetSlot(hand: Hand): State {
         const { just, nothing } = Maybe
         const byArea = (result: Maybe<EligibleSlot>, data: EligibleSlot): Maybe<EligibleSlot> => {
             return result.cata(
@@ -359,16 +359,16 @@ function targetSlot (state: State): State {
         const slot = state.eligibleSlots.reduce(byArea, nothing())
         return slot.cata(clearHovering, addHovering)
 
-        function clearHovering () {
-            return hand.hoveringSlot.fold(state)(() => {
+        function clearHovering() {
+            return hand.hoveringSlot.map(() => {
                 const addCardToSlot = Maybe.nothing<IdFunction<State>>()
                 const hoveringSlot = Maybe.nothing<LazyCardSlot>()
                 const newHand: Hand = { ...hand, addCardToSlot, hoveringSlot }
                 return { ...state, hand: Maybe.just(newHand) }
-            })
+            }).orElse(state)
         }
 
-        function addHovering (eligibleSlot: EligibleSlot) {
+        function addHovering(eligibleSlot: EligibleSlot) {
             const addCardToSlot = Maybe.just(eligibleSlot.addCard)
             const hoveringSlot = Maybe.just(eligibleSlot)
             const newHand: Hand = { ...hand, addCardToSlot, hoveringSlot }
@@ -377,19 +377,19 @@ function targetSlot (state: State): State {
     }
 }
 
-function updateSize (val: Dimensions) {
-    return function <A extends Dimensions> (data: A): A {
+function updateSize(val: Dimensions) {
+    return function <A extends Dimensions>(data: A): A {
         return { ...data, height: val.height, width: val.width }
     }
 }
 
-export function updatePosition (val: Point) {
-    return function <A extends Point> (data: A): A {
+export function updatePosition(val: Point) {
+    return function <A extends Point>(data: A): A {
         return { ...data, x: val.x, y: val.y }
     }
 }
 
-export function updateCardsPositionWithOffset (cardOffsetSize: number) {
+export function updateCardsPositionWithOffset(cardOffsetSize: number) {
     return (slot: CardSlot) => (card: Card, index: number) => {
         const offset = addOffsetY(index * cardOffsetSize)
         const update = updatePosition(offset(slot))
@@ -397,61 +397,61 @@ export function updateCardsPositionWithOffset (cardOffsetSize: number) {
     }
 }
 
-export function addOffsetY (offset: number) {
-    return <A extends Point> (data: A): A => ({ ...data, y: data.y + offset })
+export function addOffsetY(offset: number) {
+    return <A extends Point>(data: A): A => ({ ...data, y: data.y + offset })
 }
 
-export function removeTopCardsFromSlot (lazySlot: LazyCardSlot, number: number) {
+export function removeTopCardsFromSlot(lazySlot: LazyCardSlot, number: number) {
     return lazySlot.update(slot => {
         return { cards: removeTop(slot.cards, number) }
     })
 }
 
-export function addCardToFn (lazySlot: LazyCardSlot) {
+export function addCardToFn(lazySlot: LazyCardSlot) {
     return (state: State): State => {
         const updateCardPosition = updatePosition(lazySlot.data(state))
-        return state.hand.fold(state)(hand => pipe(state)
+        return state.hand.map(hand => pipe(state)
             .pipe(updateHand(() => Maybe.nothing()))
             .pipe(lazySlot.update(slot => {
                 return { cards: [...slot.cards, ...hand.cards.map(updateCardPosition)] }
             }))
             .run()
-        )
+        ).orElse(state)
     }
 }
 
-export function addCardsToSlot (lazySlot: LazyCardSlot) {
+export function addCardsToSlot(lazySlot: LazyCardSlot) {
     return function (state: State): State {
         const updateCardPosition = updatePosition(lazySlot.data(state))
-        return state.hand.fold(state)(hand => pipe(state)
+        return state.hand.map(hand => pipe(state)
             .pipe(updateHand(() => Maybe.nothing()))
             .pipe(lazySlot.update(slot => {
                 return { cards: slot.cards.concat(hand.cards.map(updateCardPosition)) }
             }))
             .run()
-        )
+        ).orElse(state)
     }
 }
 
-export function addCardsToPackingSlot (lazySlot: LazyCardSlot) {
+export function addCardsToPackingSlot(lazySlot: LazyCardSlot) {
     return function (state: State): State {
         const updateCardPosition = (slot: CardSlot) => ((card: Card, index: number) => {
             const offset = addOffsetY((slot.cards.length + index) * state.cardOffsetSize)
             const update = updatePosition(offset(slot))
             return update(card)
         })
-        return state.hand.fold(state)(hand => pipe(state)
+        return state.hand.map(hand => pipe(state)
             .pipe(updateHand(() => Maybe.nothing()))
             .pipe(lazySlot.update(slot => {
                 const update = updateCardPosition(slot)
                 return { cards: slot.cards.concat(hand.cards.map(update)) }
             }))
             .run()
-        )
+        ).orElse(state)
     }
 }
 
-export function updateHand (fn: IdFunction<Maybe<Hand>>): IdFunction<State> {
+export function updateHand(fn: IdFunction<Maybe<Hand>>): IdFunction<State> {
     return function (state: State): State {
         return { ...state, hand: fn(state.hand) }
     }
@@ -574,19 +574,19 @@ export const lazyPacking7: LazyCardSlot = {
     }
 }
 
-export function setCard (state: State): State {
-    return state.hand.fold(state)(hand => {
+export function setCard(state: State): State {
+    return state.hand.map(hand => {
         return hand.addCardToSlot.cata(returnCard, addCard)
-        function returnCard () { return hand.returnCard(state) }
-        function addCard (fn: IdFunction<State>) {
+        function returnCard() { return hand.returnCard(state) }
+        function addCard(fn: IdFunction<State>) {
             return fn(state)
         }
-    })
+    }).orElse(state)
 }
 
-export function moveCard (event: MouseEvent): EventFn {
+export function moveCard(event: MouseEvent): EventFn {
     return (state: State): State => {
-        return state.hand.fold(state)(hand => {
+        return state.hand.map(hand => {
             const [card] = hand.cards
             if (card === undefined) return state
             const point: Point = {
@@ -606,19 +606,19 @@ export function moveCard (event: MouseEvent): EventFn {
                 startY: event.screenY
             }
             return updateHand(() => Maybe.just(newHand))(state)
-        })
+        }).orElse(state)
     }
 }
 
-function reverse<A> (list: ReadonlyArray<A>): ReadonlyArray<A> {
+function reverse<A>(list: ReadonlyArray<A>): ReadonlyArray<A> {
     return [...list].reverse()
 }
 
-export function nextCard (state: State): State {
+export function nextCard(state: State): State {
     const topCard = top(state.sourcePile.cards)
     return topCard.cata(resetSource, addCardToWastePile)
 
-    function resetSource () {
+    function resetSource() {
         return pipe(state)
             .pipe(lazySourcePile.update((pile, state) => {
                 const position = updatePosition(pile)
@@ -628,7 +628,7 @@ export function nextCard (state: State): State {
             .run()
     }
 
-    function addCardToWastePile (card: Card) {
+    function addCardToWastePile(card: Card) {
         return pipe(state)
             .pipe(removeTopCardsFromSlot(lazySourcePile, 1))
             .pipe(lazyWastePile.update((slot) => {
@@ -639,8 +639,8 @@ export function nextCard (state: State): State {
     }
 }
 
-export function addCardsToWastePile (state: State): State {
-    return state.hand.fold(state)(hand => {
+export function addCardsToWastePile(state: State): State {
+    return state.hand.map(hand => {
         console.log('addCardsToWastePile')
         const pushCard = updateWastePile(data => {
             const updateCardPosition = updatePosition(state.wastePile)
@@ -651,17 +651,17 @@ export function addCardsToWastePile (state: State): State {
             .pipe(pushCard)
             .pipe(updateHand(() => Maybe.nothing()))
             .run()
-    })
+    }).orElse(state)
 }
 
-function updateWastePile (fn: (data: CardSlot) => Partial<CardSlot>): IdFunction<State> {
+function updateWastePile(fn: (data: CardSlot) => Partial<CardSlot>): IdFunction<State> {
     return function (state) {
         const wastePile = { ...state.wastePile, ...fn(state.wastePile) }
         return { ...state, wastePile }
     }
 }
 
-export function flipCard (card: Card): Card {
+export function flipCard(card: Card): Card {
     return { ...card, orientation: card.orientation === 'up' ? 'down' : 'up' }
 }
 
