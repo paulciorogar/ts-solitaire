@@ -1,0 +1,15 @@
+{
+    "require": "./register.js",
+    "reporter": "min",
+    "bail":true,
+    "watch-files": [
+        "src/"
+    ],
+    "watch-ignore": [
+        "node_modules",
+        ".git",
+        "dist",
+        "out",
+        "webpack"
+    ]
+}
