@@ -1,26 +1,32 @@
 {
-  "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "outDir": "dist/tests",
-    "isolatedModules": false,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": false,
-    "noImplicitAny": false,
-    "strictPropertyInitialization": false,
-    "noImplicitOverride": true,
-    "skipLibCheck": true
-},
-  "exclude": [
-    "node_modules",
-    "dist",
-    "out",
-    "webpack"
-  ],
-  "include": [
-    "./**/*.ts"
-  ]
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "outDir": "dist/tests",
+        "isolatedModules": false,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": false,
+        "noImplicitAny": false,
+        "strictPropertyInitialization": false,
+        "noImplicitOverride": true,
+        "skipLibCheck": true,
+        "plugins": [
+            {
+                "transform": "ts-auto-mock/transformer",
+                "cacheBetweenTests": false
+            }
+        ]
+    },
+    "exclude": [
+        "node_modules",
+        "dist",
+        "out",
+        "webpack"
+    ],
+    "include": [
+        "./**/*.ts"
+    ]
 }

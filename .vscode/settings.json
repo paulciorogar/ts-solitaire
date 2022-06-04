@@ -7,7 +7,7 @@
         "Ciorogar",
         "Consolas",
         "monospace",
-        "typemoq"
+        "ttypescript"
     ],
     "editor.suggestSelection": "first",
     "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
