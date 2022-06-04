@@ -1,11 +1,21 @@
 {
-    "name": "my-project",
+    "name": "ts-solitaire",
     "source": "src/index.html",
-    "devDependencies": {
-        "parcel": "^2.5.0"
-    },
     "scripts": {
         "start": "parcel ",
-        "build": "parcel build"
+        "build": "parcel build",
+        "test": "mocha 'src/**/*.test.ts'",
+        "test-dev": "mocha 'src/**/*.test.ts' -w"
+    },
+    "author": "Paul Ciorogar",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/mocha": "^9.1.1",
+        "chai": "^4.3.6",
+        "mocha": "^10.0.0",
+        "parcel": "^2.5.0",
+        "ts-node": "^10.7.0",
+        "typemoq": "^2.1.0",
+        "typescript": "^4.6.4"
     }
 }
