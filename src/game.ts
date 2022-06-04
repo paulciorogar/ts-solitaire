@@ -39,6 +39,42 @@ export class Game {
     }
 }
 
+export class _Game {
+
+    private state: State
+    private oldState: State
+
+    constructor(
+        private animation: AnimationFrameProvider,
+        initialState: State,
+        private next: NextFn,
+        private render: RenderFn,
+    ) {
+        this.state = initialState
+        this.oldState = initialState
+    }
+
+    run() {
+        if (this.state.running) return
+        this.state = { ...this.state, running: true }
+
+        const step: FrameRequestCallback = t => {
+            this.oldState = this.state
+            this.state = this.next(this.state)
+            this.render(this.state, this.oldState)
+            this.animation.requestAnimationFrame(step)
+        }
+
+        this.animation.requestAnimationFrame(step)
+    }
+
+    newEvent(fn: EventFn) {
+        const { eventQ } = this.state
+        this.oldState = this.state
+        this.state = { ...this.state, eventQ: [...eventQ, fn] }
+    }
+}
+
 class NextState {
     constructor(readonly current: State, readonly oldState: State) { }
     map(fn: (current: State, oldState: State) => State): NextState {
