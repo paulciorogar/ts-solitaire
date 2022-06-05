@@ -1,14 +1,14 @@
-import { Maybe } from './maybe'
+import { from as maybeFrom, Maybe } from './maybe'
 import { Dimensions, Point } from './state'
-export function debounce<A> (fn: (data: A) => void, time: number) {
+export function debounce<A>(fn: (data: A) => void, time: number) {
     let timeoutId: number | undefined = undefined
     return function (data: A) {
         clearTimeout(timeoutId)
-        timeoutId = setTimeout(() => fn(data), time)
+        timeoutId = window.setTimeout(() => fn(data), time)
     }
 }
 
-export function throttle<A> (fn: (data: A) => void, limit: number) {
+export function throttle<A>(fn: (data: A) => void, limit: number) {
     let wait = false
     return function (data: A) {
         if (wait) return
@@ -19,36 +19,36 @@ export function throttle<A> (fn: (data: A) => void, limit: number) {
 }
 
 export class Pipe<A> {
-    constructor (private prev: () => A) { }
+    constructor(private prev: () => A) { }
 
-    pipe<B> (fn: (data: A) => B) {
+    pipe<B>(fn: (data: A) => B) {
         return new Pipe<B>(() => {
             return fn(this.prev())
         })
     }
 
-    run (): A { return this.prev() }
+    run(): A { return this.prev() }
 }
 
-export function pipe<A> (data: A): Pipe<A> {
+export function pipe<A>(data: A): Pipe<A> {
     return new Pipe(() => data)
 }
 
-export function peek<A> (fn: (data: A) => void): (data: A) => A {
+export function peek<A>(fn: (data: A) => void): (data: A) => A {
     return (data) => {
         fn(data)
         return data
     }
 }
 
-export function px (val: number): string { return val + 'px' }
+export function px(val: number): string { return val + 'px' }
 
-export function top<A> (list: A[] | ReadonlyArray<A>): Maybe<A> {
+export function top<A>(list: A[] | ReadonlyArray<A>): Maybe<A> {
     const [element] = list.slice(-1)
-    return Maybe.from(element)
+    return maybeFrom(element)
 }
 
-export function topN<A> (list: A[] | ReadonlyArray<A>, number: number): ReadonlyArray<A> {
+export function topN<A>(list: A[] | ReadonlyArray<A>, number: number): ReadonlyArray<A> {
     return list.slice(-1 * number)
 }
 
@@ -64,11 +64,11 @@ export const dom = {
     }
 }
 
-export function removeTop<A> (list: ReadonlyArray<A> | A[], number = 1): A[] {
+export function removeTop<A>(list: ReadonlyArray<A> | A[], number = 1): A[] {
     return list.slice(0, list.length - number)
 }
 
-function mulberry32 (seed: number) {
+function mulberry32(seed: number) {
     return function () {
         let t = seed += 0x6D2B79F5
         t = Math.imul(t ^ t >>> 15, t | 1)
@@ -77,7 +77,7 @@ function mulberry32 (seed: number) {
     }
 }
 
-export function shuffle<A> (deck: A[], seed: number): A[] {
+export function shuffle<A>(deck: A[], seed: number): A[] {
     const rand = mulberry32(seed)
     const newRand = (max: number) => Math.floor(rand() * max)
     const list = [...deck]

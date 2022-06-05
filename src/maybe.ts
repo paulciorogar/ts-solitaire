@@ -1,11 +1,11 @@
-class Some<A> {
+export class Some<A> {
 
     readonly isValue = true
 
     private constructor(private val: A) { }
 
-    static from<B>(val: B | null | void): Maybe<B> {
-        if (val === null || val === undefined) return new Nothing()
+    static from<B>(val: B | null | undefined): Maybe<B> {
+        if (val === null || val === undefined) return new Nothing<B>()
         return new Some(val)
     }
 
@@ -53,7 +53,7 @@ class Some<A> {
     }
 }
 
-class Nothing<A> {
+export class Nothing<A> {
 
     readonly isValue = false
 
@@ -100,16 +100,14 @@ class Nothing<A> {
 
 export type Maybe<A> = Some<A> | Nothing<A>
 
-export const Maybe = {
-    just<A>(val: NonNullable<A>): Maybe<A> {
-        return Some.from(val)
-    },
+export function just<A>(val: NonNullable<A>): Maybe<A> {
+    return Some.from(val)
+}
 
-    from<A>(val: A | null | void): Maybe<A> {
-        return Some.from(val)
-    },
+export function from<A>(val: A | null | undefined): Maybe<A> {
+    return Some.from(val)
+}
 
-    nothing<A>(data?: A): Maybe<A> {
-        return new Nothing<A>()
-    }
+export function nothing<A>(data?: A): Maybe<A> {
+    return new Nothing<A>()
 }

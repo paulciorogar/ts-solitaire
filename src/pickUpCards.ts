@@ -1,9 +1,10 @@
-import { Maybe } from './maybe'
+
 import { removeTopCardsFromSlot, updateHand } from './game'
+import { just, nothing } from './maybe'
 import { AddCardsToSlotFn, LazyCardSlot, NewEventFn, State } from './state'
 import { pipe, topN } from './utility'
 
-export function pickUpCards (
+export function pickUpCards(
     newEvent: NewEventFn,
     addCardsToSlot: AddCardsToSlotFn,
     lazySlot: LazyCardSlot,
@@ -13,13 +14,13 @@ export function pickUpCards (
         const slot = lazySlot.data(state)
         const cards = topN(slot.cards, numberOfCards)
         return pipe(state)
-            .pipe(updateHand(() => Maybe.just({
+            .pipe(updateHand(() => just({
                 startX: event.screenX,
                 startY: event.screenY,
                 cards,
-                hoveringSlot: Maybe.nothing(),
+                hoveringSlot: nothing(),
                 returnCard: addCardsToSlot(lazySlot),
-                addCardToSlot: Maybe.nothing()
+                addCardToSlot: nothing()
             })))
             .pipe(removeTopCardsFromSlot(lazySlot, numberOfCards))
             .run()

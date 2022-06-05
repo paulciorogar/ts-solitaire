@@ -1,15 +1,15 @@
-import { Maybe } from './maybe'
+import { from, just, nothing } from './maybe'
 import { Component } from './component'
 import { Factory } from './factory'
 import { Card, CardSlot, conf, LazyCardSlot, State } from './state'
 import { dom } from './utility'
 
-export function packingComponent (factory: Factory, lazySlot: LazyCardSlot): Component<any> {
+export function packingComponent(factory: Factory, lazySlot: LazyCardSlot): Component<any> {
     const element = factory.cardSlotElement()
     const result = new Component(element, update)
     return result
 
-    function update (state: State, oldState: State, component: Component<any>) {
+    function update(state: State, oldState: State, component: Component<any>) {
         const slot = lazySlot.data(state)
         const oldSlot = lazySlot.data(oldState)
 
@@ -19,9 +19,9 @@ export function packingComponent (factory: Factory, lazySlot: LazyCardSlot): Com
             })
                 .bind(lazySlot => {
                     const data = lazySlot.data(state)
-                    if (data !== slot) { return Maybe.nothing() }
+                    if (data !== slot) { return nothing() }
                     element.style.borderColor = 'red'
-                    return Maybe.just(true)
+                    return just(true)
                 }).catchMap(() => element.style.borderColor = conf.cardSlotBorderColor)
         }
 
@@ -36,8 +36,8 @@ export function packingComponent (factory: Factory, lazySlot: LazyCardSlot): Com
         })
     }
 
-    function cardComponent (card: Card, state: State, slot: CardSlot, index: number): Component<any> {
-        const cardData = (state: State) => Maybe.from(lazySlot.data(state).cards[index])
+    function cardComponent(card: Card, state: State, slot: CardSlot, index: number): Component<any> {
+        const cardData = (state: State) => from(lazySlot.data(state).cards[index])
 
         if (card.orientation === 'down') { return factory._faceDownCard(state, cardData) }
 

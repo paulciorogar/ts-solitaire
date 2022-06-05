@@ -1,5 +1,5 @@
-import { Maybe } from './maybe'
 import { Component } from './component'
+import { just, nothing } from './maybe'
 import { CardDataFn, conf, LazyCardSlot, SlotDataFn, State } from './state'
 import { dom } from './utility'
 
@@ -27,9 +27,9 @@ export function targetSlotFactory(spec: TargetSlotFactorySpec): Component<any> {
             })
                 .bind(lazySlot => {
                     const data = lazySlot.data(state)
-                    if (data !== slot) { return Maybe.nothing() }
+                    if (data !== slot) { return nothing() }
                     element.style.borderColor = 'red'
-                    return Maybe.just(true)
+                    return just(true)
                 }).catchMap(() => element.style.borderColor = conf.cardSlotBorderColor)
         }
 

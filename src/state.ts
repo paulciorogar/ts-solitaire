@@ -1,4 +1,4 @@
-import { Maybe } from './maybe'
+import { Maybe, nothing } from './maybe'
 import { addCardsToWastePile, addCardToFn, flipCard, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4 } from './game'
 import { shuffle, topN, removeTop } from './utility'
 
@@ -19,7 +19,7 @@ export const conf = Object.freeze({
 
 const cardNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const
 
-export function NO_OP () { }
+export function NO_OP() { }
 export const Fn: IdFunction<any> = (data) => data
 
 export type IdFunction<A> = (data: A) => A
@@ -79,6 +79,7 @@ export type Hand = {
 
 
 export type State = {
+    readonly running: boolean
     readonly eligibleSlots: ReadonlyArray<EligibleSlot>
     readonly hand: Maybe<Hand>
     readonly eventQ: ReadonlyArray<EventFn>
@@ -101,7 +102,7 @@ export type State = {
     readonly packing7: CardSlot
 }
 
-export function newState (): State {
+export function newState(): State {
     let cardDeck = newCardDeck(1)
 
     const pack1 = topN(cardDeck, 1).map(flipCard)
@@ -127,10 +128,11 @@ export function newState (): State {
 
     const point = { x: 0, y: 0 }
     const size = { width: 0, height: 0 }
-    const rectangle = newRectangle(point, size)
+    const rectangle = newRectangle(point, size) // TODO: remove
     return {
+        running: false,
         eligibleSlots: [],
-        hand: Maybe.nothing(),
+        hand: nothing(),
         eventQ: [],
         body: size,
         cardSize: size,
@@ -152,18 +154,18 @@ export function newState (): State {
     }
 }
 
-export function slotRectangle (slot: CardSlot): Rectangle {
+export function slotRectangle(slot: CardSlot): Rectangle {
     return newRectangle(slot, slot)
 }
 
-export function newRectangle (origin: Point, size: Dimensions): Rectangle {
+export function newRectangle(origin: Point, size: Dimensions): Rectangle {
     return {
         a: origin,
         b: { x: origin.x + size.width, y: origin.y + size.height }
     }
 }
 
-export function newCardDeck (game: number): Card[] {
+export function newCardDeck(game: number): Card[] {
     return shuffle([
         ...generateSuite('♠'),
         ...generateSuite('♣'),
@@ -171,7 +173,7 @@ export function newCardDeck (game: number): Card[] {
         ...generateSuite('♦'),
     ], game)
 
-    function generateSuite (suit: Suit): Card[] {
+    function generateSuite(suit: Suit): Card[] {
         return cardNumbers.map(num => ({
             number: num,
             orientation: 'up',

@@ -1,4 +1,4 @@
-import { Maybe } from './maybe'
+import { from, Maybe, nothing } from './maybe'
 import { newFaceDownCard, newFaceUpCard } from './cardComponent'
 import { Component } from './component'
 import {
@@ -21,7 +21,7 @@ export class Factory {
         const element = this.document.createElement('div')
         const moveCardCallback = this.moveCard()
 
-        let handComponent: Maybe<Component<any>> = Maybe.nothing()
+        let handComponent: Maybe<Component<any>> = nothing()
         element.style.position = 'fixed'
         element.style.width = '100%'
         element.style.height = '100%'
@@ -56,7 +56,7 @@ export class Factory {
                 return handComponent.bind(cmp => {
                     document.body.removeEventListener('mousemove', moveCardCallback)
                     component.remove(cmp)
-                    return Maybe.nothing()
+                    return nothing()
                 })
             }
 
@@ -84,7 +84,7 @@ export class Factory {
                 if (cards === oldCards) return
                 component.removeAll()
                 cards.forEach((_, index) => {
-                    const cardData = (state: State) => state.hand.bind(hand => Maybe.from(hand.cards[index]))
+                    const cardData = (state: State) => state.hand.bind(hand => from(hand.cards[index]))
                     const cardComponent = factory.card(NO_OP, cardData)
                     component.append(cardComponent(state))
                 })
