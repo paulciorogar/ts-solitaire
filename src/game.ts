@@ -1,10 +1,11 @@
-import { Maybe } from './maybe'
+import { just, Maybe, nothing } from './maybe'
 import {
+    AddCardsToSlotFn,
     Card, CardSlot, conf, Dimensions, EligibleSlot, EventFn,
     Hand, IdFunction, LazyCardSlot, newRectangle, NextFn, Point,
     Rectangle, RenderFn, slotRectangle, State, Suit, UpdateCardsPosition
 } from './state'
-import { pipe, removeTop, top } from './utility'
+import { first, pipe, removeTop, top } from './utility'
 
 export class Game {
 
@@ -68,7 +69,22 @@ export class _Game {
         this.animation.requestAnimationFrame(step)
     }
 
-    newEvent(fn: EventFn) {
+    nextCard() { this.newEvent(nextCard) }
+
+    setCard() { this.newEvent(setCard) }
+
+    moveCard(event: MouseEvent) { this.newEvent(_moveCard(event)) }
+
+    pickUpCards(
+        event: MouseEvent,
+        addCardsToSlot: AddCardsToSlotFn,
+        lazySlot: LazyCardSlot,
+        numberOfCards = 1
+    ) {
+        // this.newEvent(pickUpCards(event, addCardsToSlot, lazySlot, numberOfCards))
+    }
+
+    private newEvent(fn: EventFn) {
         const { eventQ } = this.state
         this.oldState = this.state
         this.state = { ...this.state, eventQ: [...eventQ, fn] }
@@ -284,8 +300,7 @@ function eligibleSlots(state: State): State {
 function _eligibleSlots(state: State, oldState: State): State {
     if (state.hand === oldState.hand) return state
     const eligibleSlots: EligibleSlot[] = []
-    const { just } = Maybe
-    return state.hand.map(hand => hand.cards[0])
+    return state.hand.bind(hand => first(hand.cards))
         .bind(cardInHand => {
             console.log('_eligibleSlots')
             eligibleTargetSlot(state, lazyTarget1, cardInHand).map(slot => eligibleSlots.push(slot))
@@ -311,14 +326,14 @@ function eligibleTargetSlot(state: State, lazySlot: LazyCardSlot, card: Card): M
     return topCard.cata(none, some)
 
     function none(): Maybe<EligibleSlot> {
-        if (card.number === 1) return Maybe.just(newEligibleSlot())
-        return Maybe.nothing()
+        if (card.number === 1) return just(newEligibleSlot())
+        return nothing()
     }
 
     function some(topCard: Card): Maybe<EligibleSlot> {
-        if (topCard.suit !== card.suit) return Maybe.nothing()
-        if (topCard.number + 1 !== card.number) return Maybe.nothing()
-        return Maybe.just(newEligibleSlot())
+        if (topCard.suit !== card.suit) return nothing()
+        if (topCard.number + 1 !== card.number) return nothing()
+        return just(newEligibleSlot())
     }
 
     function newEligibleSlot(): EligibleSlot {
@@ -336,14 +351,14 @@ function eligiblePackingSlot(state: State, lazySlot: LazyCardSlot, cardInHand: C
     return card.cata(none, some)
 
     function none(): Maybe<EligibleSlot> {
-        if (cardInHand.number === 13) return Maybe.just(newEligibleSlot())
-        return Maybe.nothing()
+        if (cardInHand.number === 13) return just(newEligibleSlot())
+        return nothing()
     }
 
     function some(card: Card): Maybe<EligibleSlot> {
-        if (sameColor(card.suit, cardInHand.suit)) return Maybe.nothing()
-        if (card.number - 1 !== cardInHand.number) return Maybe.nothing()
-        return Maybe.just(newEligibleSlot())
+        if (sameColor(card.suit, cardInHand.suit)) return nothing()
+        if (card.number - 1 !== cardInHand.number) return nothing()
+        return just(newEligibleSlot())
     }
 
     function newEligibleSlot(): EligibleSlot {
@@ -384,7 +399,6 @@ function targetSlot(state: State): State {
     function clear() { return state }
 
     function findTargetSlot(hand: Hand): State {
-        const { just, nothing } = Maybe
         const byArea = (result: Maybe<EligibleSlot>, data: EligibleSlot): Maybe<EligibleSlot> => {
             return result.cata(
                 () => data.overlappingArea > 0 ? just(data) : result,
@@ -397,18 +411,18 @@ function targetSlot(state: State): State {
 
         function clearHovering() {
             return hand.hoveringSlot.map(() => {
-                const addCardToSlot = Maybe.nothing<IdFunction<State>>()
-                const hoveringSlot = Maybe.nothing<LazyCardSlot>()
+                const addCardToSlot = nothing<IdFunction<State>>()
+                const hoveringSlot = nothing<LazyCardSlot>()
                 const newHand: Hand = { ...hand, addCardToSlot, hoveringSlot }
-                return { ...state, hand: Maybe.just(newHand) }
+                return { ...state, hand: just(newHand) }
             }).orElse(state)
         }
 
         function addHovering(eligibleSlot: EligibleSlot) {
-            const addCardToSlot = Maybe.just(eligibleSlot.addCard)
-            const hoveringSlot = Maybe.just(eligibleSlot)
+            const addCardToSlot = just(eligibleSlot.addCard)
+            const hoveringSlot = just(eligibleSlot)
             const newHand: Hand = { ...hand, addCardToSlot, hoveringSlot }
-            return { ...state, hand: Maybe.just(newHand) }
+            return { ...state, hand: just(newHand) }
         }
     }
 }
@@ -447,7 +461,7 @@ export function addCardToFn(lazySlot: LazyCardSlot) {
     return (state: State): State => {
         const updateCardPosition = updatePosition(lazySlot.data(state))
         return state.hand.map(hand => pipe(state)
-            .pipe(updateHand(() => Maybe.nothing()))
+            .pipe(updateHand(() => nothing()))
             .pipe(lazySlot.update(slot => {
                 return { cards: [...slot.cards, ...hand.cards.map(updateCardPosition)] }
             }))
@@ -460,7 +474,7 @@ export function addCardsToSlot(lazySlot: LazyCardSlot) {
     return function (state: State): State {
         const updateCardPosition = updatePosition(lazySlot.data(state))
         return state.hand.map(hand => pipe(state)
-            .pipe(updateHand(() => Maybe.nothing()))
+            .pipe(updateHand(() => nothing()))
             .pipe(lazySlot.update(slot => {
                 return { cards: slot.cards.concat(hand.cards.map(updateCardPosition)) }
             }))
@@ -477,7 +491,7 @@ export function addCardsToPackingSlot(lazySlot: LazyCardSlot) {
             return update(card)
         })
         return state.hand.map(hand => pipe(state)
-            .pipe(updateHand(() => Maybe.nothing()))
+            .pipe(updateHand(() => nothing()))
             .pipe(lazySlot.update(slot => {
                 const update = updateCardPosition(slot)
                 return { cards: slot.cards.concat(hand.cards.map(update)) }
@@ -641,7 +655,33 @@ export function moveCard(event: MouseEvent): EventFn {
                 startX: event.screenX,
                 startY: event.screenY
             }
-            return updateHand(() => Maybe.just(newHand))(state)
+            return updateHand(() => just(newHand))(state)
+        }).orElse(state)
+    }
+}
+
+export function _moveCard(to: Point): EventFn {
+    return (state: State): State => {
+        return state.hand.map(hand => {
+            const [card] = hand.cards
+            if (card === undefined) return state
+            const point: Point = {
+                x: card.x + (to.x - hand.startX),
+                y: card.y + (to.y - hand.startY),
+            }
+            const updateCardPosition = (point: Point) => ((card: Card, index: number) => {
+                const offset = addOffsetY(index * state.cardOffsetSize)
+                const update = updatePosition(offset(point))
+                return update(card)
+            })
+            const move = updateCardPosition(point)
+            const newHand: Hand = {
+                ...hand,
+                cards: hand.cards.map(move),
+                startX: to.x,
+                startY: to.y
+            }
+            return updateHand(() => just(newHand))(state)
         }).orElse(state)
     }
 }
@@ -685,7 +725,7 @@ export function addCardsToWastePile(state: State): State {
         })
         return pipe(state)
             .pipe(pushCard)
-            .pipe(updateHand(() => Maybe.nothing()))
+            .pipe(updateHand(() => nothing()))
             .run()
     }).orElse(state)
 }

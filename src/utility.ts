@@ -48,6 +48,10 @@ export function top<A>(list: A[] | ReadonlyArray<A>): Maybe<A> {
     return maybeFrom(element)
 }
 
+export function first<A>(list: A[] | ReadonlyArray<A>): Maybe<A> {
+    return maybeFrom(list[0])
+}
+
 export function topN<A>(list: A[] | ReadonlyArray<A>, number: number): ReadonlyArray<A> {
     return list.slice(-1 * number)
 }
@@ -86,9 +90,11 @@ export function shuffle<A>(deck: A[], seed: number): A[] {
     while (lastIndex > 0) {
         const randIndex = newRand(lastIndex)
         const lastIndexElem = list[lastIndex]
-        list[lastIndex] = list[randIndex]
-        list[randIndex] = lastIndexElem
-        lastIndex--
+        if (lastIndex < list.length && randIndex < list.length) {
+            list[lastIndex] = list[randIndex]
+            list[randIndex] = lastIndexElem
+            lastIndex--
+        }
     }
     return list
 }
