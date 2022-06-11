@@ -2,7 +2,8 @@ import { expect } from 'chai'
 import { createMock } from 'ts-auto-mock'
 import { _Game } from './game'
 import { just, nothing } from './maybe'
-import { CardSlot, Hand, IdFunction, NextFn, RenderFn, State } from './state'
+import { CardSlot, Hand, IdFunction, LazyCardSlot, NextFn, RenderFn, State } from './state'
+import { peek, pipe } from './utility'
 
 let animation: AnimationFrameProvider
 let render: RenderFn = (current, old) => { }
@@ -264,11 +265,78 @@ describe('Game', function () {
             })
         })
 
-        it('updates hand position with the difference from current position to next position', function () {
-            const initialState = createMock<State>()
-            const game = new _Game(animation, initialState, next, render)
+        it('updates hand position with the difference from current position to next position', function (done) {
+            const initialState = createMock<State>({
+                hand: just<Hand>({
+                    startX: 10,
+                    startY: 11,
+                    cards: [{
+                        orientation: 'up',
+                        suit: '♠',
+                        number: 1,
+                        x: 100,
+                        y: 111
+                    }],
+                    hoveringSlot: nothing<LazyCardSlot>(),
+                    returnCard: (data) => data,
+                    addCardToSlot: nothing<IdFunction<State>>()
+                })
+            })
+            const localNext: NextFn = (data) => pipe(next(data))
+                .pipe(peek(state =>
+                    state.hand.forEach(hand => {
+                        expect(hand.startX).eq(1000)
+                        expect(hand.startY).eq(1111)
+                        expect(hand.cards).deep.eq([
+                            {
+                                orientation: 'up',
+                                suit: '♠',
+                                number: 1,
+                                x: 1090,
+                                y: 1211
+                            }
+                        ])
+                        done()
+                    })
+                ))
+                .run()
+            const game = new _Game(animation, initialState, localNext, render)
 
-            // game.nextCard()
+            game.moveCard({ x: 1000, y: 1111 })
+            game.run()
+        })
+
+        it('updates cards in hand with the offset', function (done) {
+            const initialState = createMock<State>({
+                cardOffsetSize: 3,
+                hand: just<Hand>({
+                    startX: 10,
+                    startY: 11,
+                    cards: [
+                        { orientation: 'up', suit: '♠', number: 1, x: 100, y: 111 },
+                        { orientation: 'up', suit: '♠', number: 2, x: 100, y: 111 }
+                    ],
+                    hoveringSlot: nothing<LazyCardSlot>(),
+                    returnCard: (data) => data,
+                    addCardToSlot: nothing<IdFunction<State>>()
+                })
+            })
+            const localNext: NextFn = (data) => pipe(next(data))
+                .pipe(peek(state =>
+                    state.hand.forEach(hand => {
+                        expect(hand.startX).eq(1000)
+                        expect(hand.startY).eq(1111)
+                        expect(hand.cards).deep.eq([
+                            { orientation: 'up', suit: '♠', number: 1, x: 1090, y: 1211 },
+                            { orientation: 'up', suit: '♠', number: 2, x: 1090, y: 1214 }
+                        ])
+                        done()
+                    })
+                ))
+                .run()
+            const game = new _Game(animation, initialState, localNext, render)
+
+            game.moveCard({ x: 1000, y: 1111 })
             game.run()
         })
 

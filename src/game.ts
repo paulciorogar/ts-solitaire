@@ -73,7 +73,7 @@ export class _Game {
 
     setCard() { this.newEvent(setCard) }
 
-    moveCard(event: MouseEvent) { this.newEvent(_moveCard(event)) }
+    moveCard(point: Point) { this.newEvent(_moveCard(point)) }
 
     pickUpCards(
         event: MouseEvent,
