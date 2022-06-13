@@ -17,7 +17,7 @@ export class Some<A> {
         return bindFn(this.val)
     }
 
-    map<B extends Object>(fn: (value: A) => B): Maybe<B> {
+    map<B extends Object>(fn: (value: A) => B): Some<B> | Nothing<B> {
         return Some.from(fn(this.val))
     }
 
@@ -39,7 +39,7 @@ export class Some<A> {
         fn(this.val)
     }
 
-    equals(other: Maybe<A>) {
+    equals(other: Maybe<A>): boolean {
         return other.map(val => val === this.val).orElse(false)
     }
 

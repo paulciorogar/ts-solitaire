@@ -1,8 +1,8 @@
 import { expect } from 'chai'
 import { createMock } from 'ts-auto-mock'
-import { _Game } from './game'
+import { lazyPacking1, _Game } from './game'
 import { just, nothing } from './maybe'
-import { CardSlot, Hand, IdFunction, LazyCardSlot, NextFn, RenderFn, State } from './state'
+import { AddCardsToSlotFn, CardSlot, Hand, IdFunction, LazyCardSlot, NextFn, RenderFn, State } from './state'
 import { peek, pipe } from './utility'
 
 let animation: AnimationFrameProvider
@@ -339,41 +339,50 @@ describe('Game', function () {
             game.moveCard({ x: 1000, y: 1111 })
             game.run()
         })
+    })
 
-        // it('returns card to slot from which it was picked up', function () {
-        //     let cardReturned = false
-        //     const initialState = createMock<State>({
-        //         hand: just(createMock<Hand>({
-        //             addCardToSlot: nothing<IdFunction<State>>(),
-        //             returnCard: (sate) => { cardReturned = true; return sate }
-        //         })),
-        //     })
+    describe('pickUpCards()', function () {
+        beforeEach(() => {
+            animation = createMock<AnimationFrameProvider>({
+                requestAnimationFrame: requestAnimationFrameCallbackTimes(1)
+            })
+        })
 
-        //     const game = new _Game(animation, initialState, next, render)
+        it('moves top cards from slot to hand', function (done) {
+            const initialState = createMock<State>({
+                packing1: createMock<CardSlot>({
+                    cards: [
+                        { number: 1, suit: '♠', orientation: 'up', x: 11, y: 100 },
+                        { number: 2, suit: '♠', orientation: 'up', x: 11, y: 101 },
+                        { number: 3, suit: '♠', orientation: 'up', x: 11, y: 111 }
+                    ]
+                }),
+                hand: nothing<Hand>()
+            })
+            const localNext: NextFn = (data) => pipe(next(data))
+                .pipe(peek(state =>
+                    state.hand.forEach(hand => {
+                        expect(hand.startX).eq(1000)
+                        expect(hand.startY).eq(1111)
+                        expect(hand.returnCard).equals(expectedReturnCardFn)
+                        expect(hand.cards).deep.eq([
+                            { number: 2, suit: '♠', orientation: 'up', x: 11, y: 101 },
+                            { number: 3, suit: '♠', orientation: 'up', x: 11, y: 111 }
+                        ])
+                        expect(state.packing1.cards).deep.eq([
+                            { number: 1, suit: '♠', orientation: 'up', x: 11, y: 100 },
+                        ])
+                        done()
+                    })
+                ))
+                .run()
+            const expectedReturnCardFn: IdFunction<State> = (data) => data
+            const addCardsToSlot: AddCardsToSlotFn = () => expectedReturnCardFn
+            const game = new _Game(animation, initialState, localNext, render)
 
-        //     game.setCard()
-        //     game.run()
-        //     expect(cardReturned).true
-        // })
-
-        // it('adds card to slot', function () {
-        //     let cardAdded = false
-        //     const initialState = createMock<State>({
-        //         hand: just(createMock<Hand>({
-        //             addCardToSlot: just<IdFunction<State>>((state) => {
-        //                 cardAdded = true
-        //                 return state
-        //             }),
-        //         }))
-        //     })
-
-        //     const game = new _Game(animation, initialState, next, render)
-
-        //     game.setCard()
-        //     game.run()
-        //     expect(cardAdded).true
-        // })
-
+            game.pickUpCards({ x: 1000, y: 1111 }, addCardsToSlot, lazyPacking1, 2)
+            game.run()
+        })
     })
 })
 

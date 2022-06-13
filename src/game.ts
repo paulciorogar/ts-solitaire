@@ -1,4 +1,5 @@
 import { just, Maybe, nothing } from './maybe'
+import { _pickUpCards } from './pickUpCards'
 import {
     AddCardsToSlotFn,
     Card, CardSlot, conf, Dimensions, EligibleSlot, EventFn,
@@ -76,12 +77,12 @@ export class _Game {
     moveCard(point: Point) { this.newEvent(_moveCard(point)) }
 
     pickUpCards(
-        event: MouseEvent,
+        point: Point, // screenX screenY
         addCardsToSlot: AddCardsToSlotFn,
         lazySlot: LazyCardSlot,
         numberOfCards = 1
     ) {
-        // this.newEvent(pickUpCards(event, addCardsToSlot, lazySlot, numberOfCards))
+        this.newEvent(_pickUpCards(point, addCardsToSlot, lazySlot, numberOfCards))
     }
 
     private newEvent(fn: EventFn) {
