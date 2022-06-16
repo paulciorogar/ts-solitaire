@@ -102,6 +102,28 @@ export type State = {
     readonly packing7: CardSlot
 }
 
+export type GameLogicFn = (state: State, oldState: State) => State
+export type GameLogic = {
+    processEvents: GameLogicFn
+    containerSize: GameLogicFn
+    cardSize: GameLogicFn
+    cardSlotsPositions: GameLogicFn
+    flipSlotCards: GameLogicFn
+    eligibleSlots: GameLogicFn
+    targetSlot: GameLogicFn
+}
+
+
+export class NextState {
+    constructor(readonly current: State, readonly oldState: State) { }
+    map(fn: (current: State, oldState: State) => State): NextState {
+        return new NextState(fn(this.current, this.oldState), this.oldState)
+    }
+
+    result(): State { return this.current }
+    previous(): State { return this.oldState }
+}
+
 export function newState(): State {
     let cardDeck = newCardDeck(1)
 
