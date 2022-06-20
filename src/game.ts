@@ -3,7 +3,7 @@ import { _pickUpCards } from './pickUpCards'
 import {
     AddCardsToSlotFn,
     Card, CardSlot, conf, Dimensions, EligibleSlot, EventFn,
-    Hand, IdFunction, LazyCardSlot, newRectangle, NextFn, Point,
+    Hand, IdFunction, LazyCardSlot, newRectangle, NextStepFn, Point,
     Rectangle, RenderFn, slotRectangle, State, Suit, UpdateCardsPosition
 } from './state'
 import { first, pipe, removeTop, top } from './utility'
@@ -16,7 +16,7 @@ export class Game {
     constructor(
         private window: Window,
         initialState: State,
-        private next: NextFn,
+        private next: NextStepFn,
         private renderFn: () => RenderFn,
     ) {
         this.state = initialState
@@ -49,7 +49,7 @@ export class _Game {
     constructor(
         private animation: AnimationFrameProvider,
         initialState: State,
-        private next: NextFn,
+        private next: NextStepFn,
         private render: RenderFn,
     ) {
         this.state = initialState
@@ -102,7 +102,7 @@ class NextState {
     previous(): State { return this.oldState }
 }
 
-export function next(state: State): State {
+export function nextStep(state: State): State {
     const data = new NextState(state, state)
     return data.map(processEvents)
         .map(containerSize)

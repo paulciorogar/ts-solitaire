@@ -2,7 +2,21 @@ import { Maybe, nothing } from './maybe'
 import { addCardsToWastePile, addCardToFn, flipCard, lazyTarget1, lazyTarget2, lazyTarget3, lazyTarget4 } from './game'
 import { shuffle, topN, removeTop } from './utility'
 
-export const conf = Object.freeze({
+export type Configuration = {
+    readonly backgroundColor: string
+    readonly cardSlotBackgroundColor: string
+    readonly cardSlotBorderColor: string
+    readonly blackSuitColor: string
+    readonly redSuitColor: string
+    readonly cardRatio: { x: number, y: number }
+    readonly cardMargin: number
+    readonly columns: number
+    readonly containerMargin: number
+    readonly aspectRation: { x: number, y: number }
+    readonly cardStackOffset: number
+}
+
+export const conf: Configuration = {
     backgroundColor: '#000000',
     cardSlotBackgroundColor: '#201d36',
     cardSlotBorderColor: '#3d3861',
@@ -15,7 +29,7 @@ export const conf = Object.freeze({
     containerMargin: 40,
     aspectRation: { x: 16, y: 10 },
     cardStackOffset: 0.15,
-})
+}
 
 const cardNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const
 
@@ -23,7 +37,7 @@ export function NO_OP() { }
 export const Fn: IdFunction<any> = (data) => data
 
 export type IdFunction<A> = (data: A) => A
-export type NextFn = IdFunction<State>
+export type NextStepFn = IdFunction<State>
 export type RenderFn = (state: State, oldState: State) => void
 export type EventFn = IdFunction<State>
 export type NewEventFn = (fn: EventFn) => void
@@ -103,7 +117,7 @@ export type State = {
 }
 
 export type GameLogicFn = (state: State, oldState: State) => State
-export type GameLogic = {
+export interface GameLogicInterface {
     processEvents: GameLogicFn
     containerSize: GameLogicFn
     cardSize: GameLogicFn

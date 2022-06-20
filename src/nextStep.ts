@@ -1,6 +1,6 @@
-import { GameLogic, NextFn, NextState } from './state'
+import { NextStepFn, NextState, GameLogicInterface } from './state'
 
-export function nextFn(gameLogic: GameLogic): NextFn {
+export function nextStepFn(gameLogic: GameLogicInterface): NextStepFn {
     return (state) => {
         const data = new NextState(state, state)
         return data.map(gameLogic.processEvents)

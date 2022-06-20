@@ -2,12 +2,12 @@ import { expect } from 'chai'
 import { createMock } from 'ts-auto-mock'
 import { lazyPacking1, _Game } from './game'
 import { just, nothing } from './maybe'
-import { AddCardsToSlotFn, CardSlot, Hand, IdFunction, LazyCardSlot, NextFn, RenderFn, State } from './state'
+import { AddCardsToSlotFn, CardSlot, Hand, IdFunction, LazyCardSlot, NextStepFn, RenderFn, State } from './state'
 import { peek, pipe } from './utility'
 
 let animation: AnimationFrameProvider
 let render: RenderFn = (current, old) => { }
-let next: NextFn = (data) => data.eventQ.reduce((result, fn) => fn(result), data)
+let next: NextStepFn = (data) => data.eventQ.reduce((result, fn) => fn(result), data)
 
 describe('Game', function () {
     describe('run()', function () {
@@ -20,7 +20,7 @@ describe('Game', function () {
 
         it('starts the game loop', function () {
             const initialState = createMock<State>()
-            const next: NextFn = (data) => data
+            const next: NextStepFn = (data) => data
             let calls = 0
             animation = createMock<AnimationFrameProvider>({
                 requestAnimationFrame: (() => {
@@ -38,7 +38,7 @@ describe('Game', function () {
 
         it('does not start the game loop twice', function () {
             const initialState = createMock<State>()
-            const next: NextFn = (data) => data
+            const next: NextStepFn = (data) => data
             let calls = 0
             animation = createMock<AnimationFrameProvider>({
                 requestAnimationFrame: () => calls += 1
@@ -58,7 +58,7 @@ describe('Game', function () {
             const stateAfterSecondNext = createMock<State>()
             const stateAfterThirdNext = createMock<State>()
             const callParams: State[] = []
-            const next: NextFn = ((call = 0) => (data) => {
+            const next: NextStepFn = ((call = 0) => (data) => {
                 callParams.push(data)
                 call++
                 switch (call) {
@@ -84,7 +84,7 @@ describe('Game', function () {
             const stateAfterSecondNext = createMock<State>()
             const stateAfterThirdNext = createMock<State>()
             const callParams: { current: State, old: State }[] = []
-            const next: NextFn = ((call = 0) => (data) => {
+            const next: NextStepFn = ((call = 0) => (data) => {
                 call++
                 switch (call) {
                     case 1: return stateAfterFirstNext
@@ -131,7 +131,7 @@ describe('Game', function () {
 
         it('adds nextCard event function to event queue', function (done) {
             const initialState = createMock<State>()
-            const next: NextFn = (data) => {
+            const next: NextStepFn = (data) => {
                 const { eventQ } = data
                 expect(eventQ.length).equals(1)
                 done()
@@ -153,7 +153,7 @@ describe('Game', function () {
                 }),
                 wastePile: createMock<CardSlot>({ x: 10, y: 11 })
             })
-            const next: NextFn = (data) => {
+            const next: NextStepFn = (data) => {
                 data.eventQ.forEach(event => {
                     const result = event(data)
                     expect(result.sourcePile.cards.length).equals(0)
@@ -179,7 +179,7 @@ describe('Game', function () {
                     ]
                 })
             })
-            const next: NextFn = (data) => {
+            const next: NextStepFn = (data) => {
                 data.eventQ.forEach(event => {
                     const result = event(data)
                     expect(result.wastePile.cards.length).equals(0)
@@ -210,7 +210,7 @@ describe('Game', function () {
 
         it('adds setCard event function to event queue', function (done) {
             const initialState = createMock<State>()
-            const next: NextFn = (data) => {
+            const next: NextStepFn = (data) => {
                 expect(data.eventQ.length).equals(1)
                 done()
                 return data
@@ -282,7 +282,7 @@ describe('Game', function () {
                     addCardToSlot: nothing<IdFunction<State>>()
                 })
             })
-            const localNext: NextFn = (data) => pipe(next(data))
+            const localNext: NextStepFn = (data) => pipe(next(data))
                 .pipe(peek(state =>
                     state.hand.forEach(hand => {
                         expect(hand.startX).eq(1000)
@@ -321,7 +321,7 @@ describe('Game', function () {
                     addCardToSlot: nothing<IdFunction<State>>()
                 })
             })
-            const localNext: NextFn = (data) => pipe(next(data))
+            const localNext: NextStepFn = (data) => pipe(next(data))
                 .pipe(peek(state =>
                     state.hand.forEach(hand => {
                         expect(hand.startX).eq(1000)
@@ -359,7 +359,7 @@ describe('Game', function () {
                 }),
                 hand: nothing<Hand>()
             })
-            const localNext: NextFn = (data) => pipe(next(data))
+            const localNext: NextStepFn = (data) => pipe(next(data))
                 .pipe(peek(state =>
                     state.hand.forEach(hand => {
                         expect(hand.startX).eq(1000)

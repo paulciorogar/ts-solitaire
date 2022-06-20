@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { createMock } from 'ts-auto-mock'
-import { next } from './game'
+import { nextStep } from './game'
 import { nothing } from './maybe'
 import { conf, Hand, State } from './state'
 
@@ -15,7 +15,7 @@ describe('next()', function () {
             ]
         })
 
-        const result = next(state)
+        const result = nextStep(state)
         expect(result.eventQ).deep.equal([])
         expect(result.cardOffsetSize).equal(114)
     })
@@ -30,7 +30,7 @@ describe('next()', function () {
             })]
         })
 
-        const result = next(state)
+        const result = nextStep(state)
         expect(result.container).deep.equal({
             width: 920,
             height: 575,
@@ -51,7 +51,7 @@ describe('next()', function () {
             })]
         })
 
-        const result = next(state)
+        const result = nextStep(state)
         expect(result.cardSize).deep.equal({
             height: 173,
             width: 124
