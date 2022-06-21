@@ -160,13 +160,13 @@ function cardSlotsPositions(state: State, oldState: State): State {
     const target2 = updateSlot(state.target2, { ...target1, x: target1.x + width }, updatePosition)
     const target3 = updateSlot(state.target3, { ...target2, x: target2.x + width }, updatePosition)
     const target4 = updateSlot(state.target4, { ...target3, x: target3.x + width }, updatePosition)
-    const packing1 = updateSlot(state.packing1, { ...sourcePile, y: sourcePile.y + height }, updateCardsPositionWithOffset(state.cardOffsetSize))
-    const packing2 = updateSlot(state.packing2, { ...packing1, x: packing1.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-    const packing3 = updateSlot(state.packing3, { ...packing2, x: packing2.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-    const packing4 = updateSlot(state.packing4, { ...packing3, x: packing3.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-    const packing5 = updateSlot(state.packing5, { ...packing4, x: packing4.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-    const packing6 = updateSlot(state.packing6, { ...packing5, x: packing5.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-    const packing7 = updateSlot(state.packing7, { ...packing6, x: packing6.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
+    const packing1 = updateSlot(state.packing1, { ...sourcePile, y: sourcePile.y + height }, updateCardsPositionWithOffsetFn(state.cardOffsetSize))
+    const packing2 = updateSlot(state.packing2, { ...packing1, x: packing1.x + width }, updateCardsPositionWithOffsetFn(state.cardOffsetSize))
+    const packing3 = updateSlot(state.packing3, { ...packing2, x: packing2.x + width }, updateCardsPositionWithOffsetFn(state.cardOffsetSize))
+    const packing4 = updateSlot(state.packing4, { ...packing3, x: packing3.x + width }, updateCardsPositionWithOffsetFn(state.cardOffsetSize))
+    const packing5 = updateSlot(state.packing5, { ...packing4, x: packing4.x + width }, updateCardsPositionWithOffsetFn(state.cardOffsetSize))
+    const packing6 = updateSlot(state.packing6, { ...packing5, x: packing5.x + width }, updateCardsPositionWithOffsetFn(state.cardOffsetSize))
+    const packing7 = updateSlot(state.packing7, { ...packing6, x: packing6.x + width }, updateCardsPositionWithOffsetFn(state.cardOffsetSize))
 
     return {
         ...state, sourcePile, wastePile, target1, target2, target3, target4,
@@ -440,7 +440,7 @@ export function updatePosition(val: Point) {
     }
 }
 
-export function updateCardsPositionWithOffset(cardOffsetSize: number) {
+export function updateCardsPositionWithOffsetFn(cardOffsetSize: number) {
     return (slot: CardSlot) => (card: Card, index: number) => {
         const offset = addOffsetY(index * cardOffsetSize)
         const update = updatePosition(offset(slot))

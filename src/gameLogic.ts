@@ -1,4 +1,4 @@
-import { updateCardsPositionWithOffset, updatePosition, updateSize } from './game'
+import { updateCardsPositionWithOffsetFn, updatePosition, updateSize } from './game'
 import { CardSlot, conf, Configuration, GameLogicInterface, Point, State, UpdateCardsPosition } from './state'
 import { pipe } from './utility'
 
@@ -46,25 +46,25 @@ export class GameLogic implements GameLogicInterface {
         if (state.cardSize === oldState.cardSize) return state
         const width = conf.cardMargin + state.cardSize.width
         const height = 2 * conf.cardMargin + state.cardSize.height
+        const topPosition = slotPositionFn(state.container, width)
+        const bottomPosition = slotPositionFn({ ...state.container, y: state.container.y + height }, width)
+        const updateCardsPositionWithOffset = updateCardsPositionWithOffsetFn(state.cardOffsetSize)
 
-        const sourcePile = updateSlot(state.sourcePile, state.container, updatePosition)
-        const wastePile = updateSlot(state.wastePile, { ...sourcePile, x: sourcePile.x + width }, updatePosition)
-        const target1 = updateSlot(state.target1, { ...wastePile, x: wastePile.x + 2 * width }, updatePosition)
-        const target2 = updateSlot(state.target2, { ...target1, x: target1.x + width }, updatePosition)
-        const target3 = updateSlot(state.target3, { ...target2, x: target2.x + width }, updatePosition)
-        const target4 = updateSlot(state.target4, { ...target3, x: target3.x + width }, updatePosition)
-        const packing1 = updateSlot(state.packing1, { ...sourcePile, y: sourcePile.y + height }, updateCardsPositionWithOffset(state.cardOffsetSize))
-        const packing2 = updateSlot(state.packing2, { ...packing1, x: packing1.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-        const packing3 = updateSlot(state.packing3, { ...packing2, x: packing2.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-        const packing4 = updateSlot(state.packing4, { ...packing3, x: packing3.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-        const packing5 = updateSlot(state.packing5, { ...packing4, x: packing4.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-        const packing6 = updateSlot(state.packing6, { ...packing5, x: packing5.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-        const packing7 = updateSlot(state.packing7, { ...packing6, x: packing6.x + width }, updateCardsPositionWithOffset(state.cardOffsetSize))
-
-        return {
-            ...state, sourcePile, wastePile, target1, target2, target3, target4,
-            packing1, packing2, packing3, packing4, packing5, packing6, packing7
-        }
+        return pipe(state)
+            .pipe(state => ({ ...state, sourcePile: updateSlot(state.sourcePile, topPosition(0), updatePosition) }))
+            .pipe(state => ({ ...state, wastePile: updateSlot(state.wastePile, topPosition(1), updatePosition) }))
+            .pipe(state => ({ ...state, target1: updateSlot(state.target1, topPosition(3), updatePosition) }))
+            .pipe(state => ({ ...state, target2: updateSlot(state.target2, topPosition(4), updatePosition) }))
+            .pipe(state => ({ ...state, target3: updateSlot(state.target3, topPosition(5), updatePosition) }))
+            .pipe(state => ({ ...state, target4: updateSlot(state.target4, topPosition(6), updatePosition) }))
+            .pipe(state => ({ ...state, packing1: updateSlot(state.packing1, bottomPosition(0), updateCardsPositionWithOffset) }))
+            .pipe(state => ({ ...state, packing2: updateSlot(state.packing2, bottomPosition(1), updateCardsPositionWithOffset) }))
+            .pipe(state => ({ ...state, packing3: updateSlot(state.packing3, bottomPosition(2), updateCardsPositionWithOffset) }))
+            .pipe(state => ({ ...state, packing4: updateSlot(state.packing4, bottomPosition(3), updateCardsPositionWithOffset) }))
+            .pipe(state => ({ ...state, packing5: updateSlot(state.packing5, bottomPosition(4), updateCardsPositionWithOffset) }))
+            .pipe(state => ({ ...state, packing6: updateSlot(state.packing6, bottomPosition(5), updateCardsPositionWithOffset) }))
+            .pipe(state => ({ ...state, packing7: updateSlot(state.packing7, bottomPosition(6), updateCardsPositionWithOffset) }))
+            .run()
 
         function updateSlot(slot: CardSlot, position: Point, updateCardsPosition: UpdateCardsPosition): CardSlot {
             return pipe(slot)
@@ -77,6 +77,12 @@ export class GameLogic implements GameLogicInterface {
                 const update = updateCardsPosition(data)
                 const cards = data.cards.map(update)
                 return { ...data, cards: cards }
+            }
+        }
+
+        function slotPositionFn(reference: Point, unit: number) {
+            return (positionNumber: number) => {
+                return { y: reference.y, x: reference.x + (unit * positionNumber) }
             }
         }
 
