@@ -67,9 +67,7 @@ export type Card = {
     readonly number: CardNumber
 } & Point
 export type CardStack = { cards: ReadonlyArray<Card> }
-export type CardSlot = Dimensions & Point & CardStack & {
-    addCard: IdFunction<State>
-}
+export type CardSlot = Dimensions & Point & CardStack
 export type LazyCardSlot = {
     data: SlotFn,
     update: UpdateSlotFn
@@ -174,19 +172,19 @@ export function newState(): State {
         cardSize: size,
         cardOffsetSize: 0,
         container: { ...size, ...point },
-        sourcePile: { ...size, ...point, addCard: Fn, cards: cardDeck },
-        wastePile: { ...size, ...point, addCard: addCardsToWastePile, cards: [] },
-        target1: { ...size, ...point, addCard: addCardToFn(lazyTarget1), cards: [] },
-        target2: { ...size, ...point, addCard: addCardToFn(lazyTarget2), cards: [] },
-        target3: { ...size, ...point, addCard: addCardToFn(lazyTarget3), cards: [] },
-        target4: { ...size, ...point, addCard: addCardToFn(lazyTarget4), cards: [] },
-        packing1: { ...size, ...point, addCard: Fn, cards: pack1 },
-        packing2: { ...size, ...point, addCard: Fn, cards: pack2 },
-        packing3: { ...size, ...point, addCard: Fn, cards: pack3 },
-        packing4: { ...size, ...point, addCard: Fn, cards: pack4 },
-        packing5: { ...size, ...point, addCard: Fn, cards: pack5 },
-        packing6: { ...size, ...point, addCard: Fn, cards: pack6 },
-        packing7: { ...size, ...point, addCard: Fn, cards: pack7 },
+        sourcePile: { ...size, ...point, cards: cardDeck },
+        wastePile: { ...size, ...point, cards: [] },
+        target1: { ...size, ...point, cards: [] },
+        target2: { ...size, ...point, cards: [] },
+        target3: { ...size, ...point, cards: [] },
+        target4: { ...size, ...point, cards: [] },
+        packing1: { ...size, ...point, cards: pack1 },
+        packing2: { ...size, ...point, cards: pack2 },
+        packing3: { ...size, ...point, cards: pack3 },
+        packing4: { ...size, ...point, cards: pack4 },
+        packing5: { ...size, ...point, cards: pack5 },
+        packing6: { ...size, ...point, cards: pack6 },
+        packing7: { ...size, ...point, cards: pack7 },
     }
 }
 

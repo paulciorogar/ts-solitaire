@@ -428,7 +428,7 @@ function targetSlot(state: State): State {
     }
 }
 
-function updateSize(val: Dimensions) {
+export function updateSize(val: Dimensions) {
     return function <A extends Dimensions>(data: A): A {
         return { ...data, height: val.height, width: val.width }
     }
