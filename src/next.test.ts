@@ -1,18 +1,20 @@
 import { expect } from 'chai'
 import { nextStep } from './game'
 import { nothing } from './maybe'
-import { conf, Hand, State } from './state'
+import { conf, Hand, newState, State } from './state'
 
 describe('next()', function () {
     it('processes all events in order', function () {
-        const state = createMock<State>({
+        let state = newState()
+        state = {
+            ...state,
             hand: nothing<Hand>(),
             cardOffsetSize: 111,
             eventQ: [
                 (state) => ({ ...state, cardOffsetSize: state.cardOffsetSize + 1 }),
                 (state) => ({ ...state, cardOffsetSize: state.cardOffsetSize + 2 })
             ]
-        })
+        }
 
         const result = nextStep(state)
         expect(result.eventQ).deep.equal([])
@@ -20,14 +22,16 @@ describe('next()', function () {
     })
 
     it('updates container size if body changed', function () {
-        const state = createMock<State>({
+        let state = newState()
+        state = {
+            ...state,
             hand: nothing<Hand>(),
             container: { height: 0, width: 0, x: 0, y: 0 },
             eventQ: [(state) => ({
                 ...state,
                 body: { width: 1000, height: 1111 }
             })]
-        })
+        }
 
         const result = nextStep(state)
         expect(result.container).deep.equal({
@@ -40,7 +44,9 @@ describe('next()', function () {
     })
 
     it('updates card size if container changed', function () {
-        const state = createMock<State>({
+        let state = newState()
+        state = {
+            ...state,
             hand: nothing<Hand>(),
             container: { height: 0, width: 0, x: 0, y: 0 },
             cardSize: { height: 0, width: 0 },
@@ -48,7 +54,7 @@ describe('next()', function () {
                 ...state,
                 container: { height: 500, width: 920, x: 40, y: 40 }
             })]
-        })
+        }
 
         const result = nextStep(state)
         expect(result.cardSize).deep.equal({

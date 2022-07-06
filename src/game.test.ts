@@ -18,12 +18,12 @@ describe('Game', function () {
         })
 
         it('starts the game loop', function () {
-            const initialState = sinon.stubInterface<State>()
+            const initialState = newState()
             const next: NextStepFn = (data) => data
             let calls = 0
             animation = sinon.stubInterface<AnimationFrameProvider>()
+            const fn = requestAnimationFrameCallbackTimes(3)
             animation.requestAnimationFrame.callsFake((cb: FrameRequestCallback) => {
-                const fn = requestAnimationFrameCallbackTimes(3)
                 return fn(() => cb(calls += 1))
             })
 
@@ -35,7 +35,7 @@ describe('Game', function () {
         })
 
         it('does not start the game loop twice', function () {
-            const initialState = sinon.stubInterface<State>()
+            const initialState = newState()
             const next: NextStepFn = (data) => data
             let calls = 0
             animation = sinon.stubInterface<AnimationFrameProvider>()
@@ -50,10 +50,10 @@ describe('Game', function () {
         })
 
         it('calls next on each step', function () {
-            const initialState = sinon.stubInterface<State>()
-            const stateAfterFirstNext = sinon.stubInterface<State>()
-            const stateAfterSecondNext = sinon.stubInterface<State>()
-            const stateAfterThirdNext = sinon.stubInterface<State>()
+            const initialState = newState()
+            const stateAfterFirstNext = newState()
+            const stateAfterSecondNext = newState()
+            const stateAfterThirdNext = newState()
             const callParams: State[] = []
             const next: NextStepFn = ((call = 0) => (data) => {
                 callParams.push(data)
@@ -76,10 +76,10 @@ describe('Game', function () {
         })
 
         it('calls render with the current and previous state', function () {
-            const initialState = sinon.stubInterface<State>()
-            const stateAfterFirstNext = sinon.stubInterface<State>()
-            const stateAfterSecondNext = sinon.stubInterface<State>()
-            const stateAfterThirdNext = sinon.stubInterface<State>()
+            const initialState = newState()
+            const stateAfterFirstNext = newState()
+            const stateAfterSecondNext = newState()
+            const stateAfterThirdNext = newState()
             const callParams: { current: State, old: State }[] = []
             const next: NextStepFn = ((call = 0) => (data) => {
                 call++
@@ -126,7 +126,7 @@ describe('Game', function () {
         })
 
         it('adds nextCard event function to event queue', function (done) {
-            const initialState = sinon.stubInterface<State>()
+            const initialState = newState()
             const next: NextStepFn = (data) => {
                 const { eventQ } = data
                 expect(eventQ.length).equals(1)
@@ -141,22 +141,15 @@ describe('Game', function () {
         })
 
         it('adds top card form sourcePile to waste pile', function (done) {
-            const initialState: State = {
-                ...newState(),
+            let initialState = newState()
+            initialState = {
+                ...initialState,
                 sourcePile: {
+                    ...initialState.sourcePile,
                     cards: [{ number: 10, orientation: 'down', suit: '♠', x: 0, y: 0 }]
-                }
-
+                },
+                wastePile: { ...initialState.wastePile, x: 10, y: 11 }
             }
-            // initialState.sourcePile. = sinon.stubInterface<CardSlot>()
-            // const initialState = sinon.stubInterface<State>({
-            //     sourcePile: sinon.stubInterface<CardSlot>({
-            //         cards: [
-            //             { number: 10, orientation: 'down', suit: '♠', x: 0, y: 0 }
-            //         ]
-            //     }),
-            //     wastePile: sinon.stubInterface<CardSlot>({ x: 10, y: 11 })
-            // })
             const next: NextStepFn = (data) => {
                 data.eventQ.forEach(event => {
                     const result = event(data)
@@ -175,14 +168,18 @@ describe('Game', function () {
         })
 
         it('moves all cards from waste pile to source', function (done) {
-            const initialState = sinon.stubInterface<State>({
-                wastePile: sinon.stubInterface<CardSlot>({
+            let initialState = newState()
+            initialState = {
+                ...initialState,
+                sourcePile: { ...initialState.sourcePile, cards: [] },
+                wastePile: {
+                    ...initialState.wastePile,
                     cards: [
                         { number: 10, orientation: 'down', suit: '♠', x: 10, y: 11 },
                         { number: 11, orientation: 'down', suit: '♠', x: 10, y: 11 }
                     ]
-                })
-            })
+                }
+            }
             const next: NextStepFn = (data) => {
                 data.eventQ.forEach(event => {
                     const result = event(data)
@@ -207,13 +204,12 @@ describe('Game', function () {
 
     describe('setCard()', function () {
         beforeEach(() => {
-            animation = sinon.stubInterface<AnimationFrameProvider>({
-                requestAnimationFrame: requestAnimationFrameCallbackTimes(1)
-            })
+            animation = sinon.stubInterface<AnimationFrameProvider>()
+            animation.requestAnimationFrame.callsFake(requestAnimationFrameCallbackTimes(1))
         })
 
         it('adds setCard event function to event queue', function (done) {
-            const initialState = sinon.stubInterface<State>()
+            const initialState = newState()
             const next: NextStepFn = (data) => {
                 expect(data.eventQ.length).equals(1)
                 done()
@@ -228,12 +224,18 @@ describe('Game', function () {
 
         it('returns card to slot from which it was picked up', function () {
             let cardReturned = false
-            const initialState = sinon.stubInterface<State>({
-                hand: just(sinon.stubInterface<Hand>({
+            let initialState = newState()
+            initialState = {
+                ...initialState,
+                hand: just<Hand>({
+                    cards: [],
+                    hoveringSlot: nothing(),
+                    startX: 0,
+                    startY: 0,
                     addCardToSlot: nothing<IdFunction<State>>(),
-                    returnCard: (sate) => { cardReturned = true; return sate }
-                })),
-            })
+                    returnCard: (sate: State) => { cardReturned = true; return sate }
+                }),
+            }
 
             const game = new _Game(animation, initialState, next, render)
 
@@ -244,14 +246,21 @@ describe('Game', function () {
 
         it('adds card to slot', function () {
             let cardAdded = false
-            const initialState = sinon.stubInterface<State>({
-                hand: just(sinon.stubInterface<Hand>({
+            let initialState = newState()
+            initialState = {
+                ...initialState,
+                hand: just<Hand>({
                     addCardToSlot: just<IdFunction<State>>((state) => {
                         cardAdded = true
                         return state
                     }),
-                }))
-            })
+                    cards: [],
+                    hoveringSlot: nothing(),
+                    returnCard: (state) => state,
+                    startX: 0,
+                    startY: 0
+                })
+            }
 
             const game = new _Game(animation, initialState, next, render)
 
@@ -264,13 +273,15 @@ describe('Game', function () {
 
     describe('moveCard()', function () {
         beforeEach(() => {
-            animation = sinon.stubInterface<AnimationFrameProvider>({
-                requestAnimationFrame: requestAnimationFrameCallbackTimes(1)
-            })
+            animation = sinon.stubInterface<AnimationFrameProvider>()
+            animation.requestAnimationFrame.callsFake(requestAnimationFrameCallbackTimes(1))
         })
 
         it('updates hand position with the difference from current position to next position', function (done) {
-            const initialState = sinon.stubInterface<State>({
+            let initialState = newState()
+
+            initialState = {
+                ...initialState,
                 hand: just<Hand>({
                     startX: 10,
                     startY: 11,
@@ -285,7 +296,8 @@ describe('Game', function () {
                     returnCard: (data) => data,
                     addCardToSlot: nothing<IdFunction<State>>()
                 })
-            })
+            }
+
             const localNext: NextStepFn = (data) => pipe(next(data))
                 .pipe(peek(state =>
                     state.hand.forEach(hand => {
@@ -311,7 +323,9 @@ describe('Game', function () {
         })
 
         it('updates cards in hand with the offset', function (done) {
-            const initialState = sinon.stubInterface<State>({
+            let initialState = newState()
+            initialState = {
+                ...initialState,
                 cardOffsetSize: 3,
                 hand: just<Hand>({
                     startX: 10,
@@ -324,7 +338,7 @@ describe('Game', function () {
                     returnCard: (data) => data,
                     addCardToSlot: nothing<IdFunction<State>>()
                 })
-            })
+            }
             const localNext: NextStepFn = (data) => pipe(next(data))
                 .pipe(peek(state =>
                     state.hand.forEach(hand => {
@@ -347,22 +361,28 @@ describe('Game', function () {
 
     describe('pickUpCards()', function () {
         beforeEach(() => {
-            animation = sinon.stubInterface<AnimationFrameProvider>({
-                requestAnimationFrame: requestAnimationFrameCallbackTimes(1)
-            })
+            animation = sinon.stubInterface<AnimationFrameProvider>()
+            animation.requestAnimationFrame.callsFake(requestAnimationFrameCallbackTimes(1))
         })
 
         it('moves top cards from slot to hand', function (done) {
-            const initialState = sinon.stubInterface<State>({
-                packing1: sinon.stubInterface<CardSlot>({
+            let initialState = newState()
+            initialState = {
+                ...initialState,
+                packing1: {
                     cards: [
                         { number: 1, suit: '♠', orientation: 'up', x: 11, y: 100 },
                         { number: 2, suit: '♠', orientation: 'up', x: 11, y: 101 },
                         { number: 3, suit: '♠', orientation: 'up', x: 11, y: 111 }
-                    ]
-                }),
+                    ],
+                    height: 0,
+                    width: 0,
+                    x: 0,
+                    y: 0
+                },
                 hand: nothing<Hand>()
-            })
+            }
+
             const localNext: NextStepFn = (data) => pipe(next(data))
                 .pipe(peek(state =>
                     state.hand.forEach(hand => {

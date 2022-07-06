@@ -39,7 +39,7 @@
     "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": true,
     "javascript.format.insertSpaceBeforeFunctionParenthesis": false,
     "typescript.preferences.quoteStyle": "single",
-    "typescript.suggest.completeFunctionCalls": true,
+    "typescript.suggest.completeFunctionCalls": false,
     "typescript.workspaceSymbols.scope": "currentProject",
     "typescript.format.insertSpaceBeforeFunctionParenthesis": false,
     "javascript.updateImportsOnFileMove.enabled": "always",
