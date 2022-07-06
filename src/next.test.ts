@@ -1,5 +1,4 @@
 import { expect } from 'chai'
-import { createMock } from 'ts-auto-mock'
 import { nextStep } from './game'
 import { nothing } from './maybe'
 import { conf, Hand, State } from './state'

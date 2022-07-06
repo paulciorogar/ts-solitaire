@@ -12,19 +12,14 @@
         "noImplicitAny": false,
         "strictPropertyInitialization": false,
         "noImplicitOverride": true,
-        "skipLibCheck": true,
-        "plugins": [
-            {
-                "transform": "ts-auto-mock/transformer",
-                "cacheBetweenTests": false
-            }
-        ]
+        "skipLibCheck": true
     },
     "exclude": [
         "node_modules",
         "dist",
         "out",
-        "webpack"
+        "parcel-cache",
+        ".vscode"
     ],
     "include": [
         "./**/*.ts"

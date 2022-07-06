@@ -1,7 +1,7 @@
 {
     "require": "./register.js",
     "reporter": "min",
-    "bail":true,
+    "bail": true,
     "watch-files": [
         "src/"
     ],
@@ -10,6 +10,7 @@
         ".git",
         "dist",
         "out",
-        "webpack"
+        "parcel-cache",
+        ".vscode"
     ]
 }

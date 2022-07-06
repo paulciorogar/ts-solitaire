@@ -1,5 +1,4 @@
 import { expect } from 'chai'
-import { createMock } from 'ts-auto-mock'
 import { GameLogic } from './gameLogic'
 import { nothing } from './maybe'
 import { nextStepFn } from './nextStep'

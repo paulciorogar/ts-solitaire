@@ -19,12 +19,13 @@ describe('game.ts', function () {
 
     describe('newCardDeck()', function () {
         it('returns a shuffled list of cards', function () {
-            const cardList: Card[] = []
-            const shuffle: ShuffleFn = (list, seed) => { list }
-            const generateSuite: Game.GenerateSuiteFn = (suite) =>
-            const result: Game.Card[] = Game.newCardDeck(shuffle,)
-                expect(result.length).equal(13)
-                result.forEach(card => expect(card.suit).equals('♠'))
-            })
+            // const cardList: Card[] = []
+            // const shuffle: ShuffleFn = (list, seed) => { list }
+            // const generateSuite: Game.GenerateSuiteFn = (suite) =>
+            // const result: Game.Card[] = Game.newCardDeck(shuffle,)
+            //     expect(result.length).equal(13)
+            //     result.forEach(card => expect(card.suit).equals('♠'))
+            // })
+        })
     })
 })
