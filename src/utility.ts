@@ -81,8 +81,8 @@ function mulberry32(seed: number) {
     }
 }
 
-export type ShuffleFn<A> = (deck: A[], seed: number) => A[]
-export function shuffle<A>(deck: A[], seed: number): A[] {
+export type ShuffleFn = (deck: any[], seed: number) => any[]
+export function shuffle(deck: any[], seed: number): any[] {
     const rand = mulberry32(seed)
     const newRand = (max: number) => Math.floor(rand() * max)
     const list = [...deck]

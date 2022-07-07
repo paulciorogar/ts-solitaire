@@ -26,20 +26,23 @@ export function newGame(): State {
     }
 }
 
-export type GenerateSuiteFn = (suit: Suit) => Card[]
-export function generateSuite(suit: Suit): Card[] {
-    return cardNumbers.map(num => ({
-        number: num,
-        orientation: 'up',
-        suit: suit,
-    }))
-}
+export type NewCardDeckFn = (shuffle: ShuffleFn, generateSuite: GenerateSuiteFn, seed: number) => Card[]
 
-export function newCardDeck(shuffle: ShuffleFn<Card>, generateSuite: GenerateSuiteFn, seed: number): Card[] {
+export function newCardDeck(shuffle: ShuffleFn, generateSuite: GenerateSuiteFn, seed: number): Card[] {
     return shuffle([
         ...generateSuite('♠'),
         ...generateSuite('♣'),
         ...generateSuite('♥'),
         ...generateSuite('♦'),
     ], seed)
+}
+
+export type GenerateSuiteFn = (suit: Suit) => Card[]
+export function generateSuite(suit: Suit): Card[] {
+    return cardNumbers.map(num => ({
+        number: num,
+        orientation: 'up',
+        suit: suit,
+        x: 0, y: 0
+    }))
 }
